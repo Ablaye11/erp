@@ -2329,7 +2329,14 @@ def add_staff_view(request):
             message=f"Le membre du personnel {user.get_full_name()} ({position}) a été inscrit.",
             notification_type='INFO'
         )
-        return HttpResponse('<script>showPanel("personnel", "Personnel admin.", null);</script>')
+        
+        admins = AdminProfile.objects.all()
+        active_role = request.session.get('active_role', 'admin')
+        context = {
+            'active_role': active_role,
+            'admins': admins
+        }
+        return render(request, 'partials/personnel.html', context)
     except Exception as e:
         return HttpResponse(
             f'<div style="padding:8px;color:#A32D2D;">Erreur: {str(e)}</div>',
