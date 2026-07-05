@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('academics', '0005_classsubjectconfig'),
+        ('core', '0002_schoolsettings'),
     ]
 
     operations = [
