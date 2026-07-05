@@ -1,6 +1,6 @@
 <div style="display: flex; gap: 8px; margin-bottom: 15px;">
     {% if active_role == 'admin' %}
-    <button class="btn btn-primary" onclick="toggleAddForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un membre</button>
+    <button class="btn btn-primary" onclick="toggleAddStaffForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un membre</button>
     {% endif %}
 </div>
 
@@ -9,7 +9,7 @@
     <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
         <i class="ti ti-user-plus" aria-hidden="true"></i> Ajouter un membre administratif
     </h3>
-    <form hx-post="{% url 'add_staff' %}" hx-target="#addStaffResult" hx-swap="innerHTML">
+    <form hx-post="{% url 'add_staff' %}" hx-target="#mainContent" hx-swap="innerHTML">
         {% csrf_token %}
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px;">
             <div>
@@ -41,7 +41,7 @@
         <div id="addStaffResult"></div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
-            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+            <button type="button" class="btn" onclick="toggleAddStaffForm()">Annuler</button>
         </div>
     </form>
 </div>
@@ -130,7 +130,7 @@
 </div>
 
 <script>
-    function toggleAddForm() {
+    function toggleAddStaffForm() {
         const form = document.getElementById('addStaffFormContainer');
         form.style.display = form.style.display === 'none' ? 'block' : 'none';
     }
