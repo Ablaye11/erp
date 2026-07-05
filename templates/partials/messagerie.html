@@ -1,0 +1,153 @@
+<style>
+    .contact-item {
+        display: flex; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--color-border-tertiary);
+        cursor: pointer; background: transparent; transition: background-color 0.2s;
+    }
+    .contact-item.active {
+        background: var(--color-background-tertiary);
+    }
+    .contact-item:hover {
+        background: var(--color-background-tertiary);
+    }
+    .msg-row-out { justify-content: flex-end; }
+    .msg-row-in { gap: 8px; justify-content: flex-start; }
+</style>
+
+<div style="display: grid; grid-template-columns: 200px 1fr; gap: 0; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden; height: 420px; background: var(--color-background-secondary); box-shadow: var(--shadow-sm);">
+    <!-- Contacts list -->
+    <div style="border-right: 1px solid var(--color-border-tertiary); display: flex; flex-direction: column;">
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">Messages</span>
+            <i class="ti ti-edit" style="font-size: 16px; cursor: pointer; color: var(--color-primary);" aria-hidden="true"></i>
+        </div>
+        <div style="overflow-y: auto; flex: 1;">
+            {% for contact in contacts %}
+            <div hx-get="{% url 'load_panel' 'messagerie' %}?chat_user_id={{ contact.id }}" 
+                 hx-target="#mainContent" 
+                 class="contact-item {% if active_chat_user.id == contact.id %}active{% endif %}">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 600; flex-shrink: 0;">
+                    {{ contact.first_name|slice:":1" }}{{ contact.last_name|slice:":1" }}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; font-weight: 600; color: var(--color-text-primary);">{{ contact.get_full_name|default:contact.username }}</span>
+                    </div>
+                    <div style="font-size: 10px; color: var(--color-text-secondary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; margin-top: 1px;">
+                        {{ contact.get_role_display }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Active Chat Box -->
+    <div style="display: flex; flex-direction: column;">
+        {% if active_chat_user %}
+        <div style="padding: 10px 18px; border-bottom: 1px solid var(--color-border-tertiary); font-size: 13px; font-weight: 600; color: var(--color-text-primary);">
+            {{ active_chat_user.get_full_name }} <span style="font-size: 10px; color: var(--color-text-tertiary); font-weight: 400; margin-left: 6px;">({{ active_chat_user.get_role_display }})</span>
+        </div>
+        
+        <div id="chatScroll" style="flex: 1; padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+            <div id="chatBubbles" style="display: flex; flex-direction: column; gap: 10px;">
+                {% for msg in messages_list %}
+                <div class="{% if msg.sender == request.user %}msg-row-out{% else %}msg-row-in{% endif %}" style="display: flex;">
+                    {% if msg.sender != request.user %}
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--color-background-tertiary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--color-text-secondary); flex-shrink: 0;">
+                        {{ msg.sender.first_name|slice:":1" }}{{ msg.sender.last_name|slice:":1" }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        {% if msg.sender != request.user %}
+                        <div style="font-size: 9px; color: var(--color-text-tertiary); margin-bottom: 2px;">{{ msg.sender.get_full_name }} — {{ msg.created_at|date:"d M H:i" }}</div>
+                        {% endif %}
+                        <div class="msg-bubble {% if msg.sender == request.user %}msg-bubble-out{% endif %}">
+                            {{ msg.content }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Chat Input Form -->
+        <div style="padding: 10px 18px; border-top: 1px solid var(--color-border-tertiary); background: var(--color-background-tertiary);">
+            <form hx-post="{% url 'send_message' %}" hx-target="#chatBubbles" hx-swap="beforeend" 
+                  hx-on="htmx:afterRequest: this.reset(); const s = document.getElementById('chatScroll'); s.scrollTop = s.scrollHeight;"
+                  style="display: flex; gap: 8px; align-items: center;">
+                {% csrf_token %}
+                <input type="hidden" name="recipient_id" value="{{ active_chat_user.id }}">
+                <input type="text" name="content" placeholder="Écrire un message..." required style="flex: 1; font-size: 12.5px; padding: 8px 12px;">
+                <button type="submit" class="btn btn-primary" style="padding: 7px 12px;"><i class="ti ti-send" aria-hidden="true"></i></button>
+            </form>
+        </div>
+        <script>
+            // Scroll to bottom of chat on load
+            const chatBox = document.getElementById('chatScroll');
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Indicateur de statut de connexion
+            const statusDot = document.getElementById('chat-status-dot');
+            function setOnline() { if (statusDot) { statusDot.style.background = '#1D9E75'; statusDot.title = 'En ligne'; } }
+            function setOffline() { if (statusDot) { statusDot.style.background = '#E24B4A'; statusDot.title = 'Hors ligne'; } }
+            setOnline();
+
+            // Polling intelligent des nouveaux messages — s'arrête si l'onglet est invisible
+            let lastMsgCount = document.querySelectorAll('#chatBubbles > div').length;
+            let isPolling = true;
+
+            const pollInterval = setInterval(function() {
+                if (document.hidden || !isPolling) return;
+                const chatUserId = '{{ active_chat_user.id }}';
+                if (!chatUserId) { clearInterval(pollInterval); return; }
+
+                fetch('/panel/messagerie/?chat_user_id=' + chatUserId, {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(r => {
+                    if (!r.ok) throw new Error('Network error');
+                    setOnline();
+                    return r.text();
+                })
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newBubbles = doc.querySelectorAll('#chatBubbles > div');
+                    if (newBubbles.length > lastMsgCount) {
+                        lastMsgCount = newBubbles.length;
+                        const container = document.getElementById('chatBubbles');
+                        if (container) {
+                            // Ajouter seulement les nouveaux messages (pas tout remplacer)
+                            container.innerHTML = doc.getElementById('chatBubbles').innerHTML;
+                            const s = document.getElementById('chatScroll');
+                            if (s) s.scrollTop = s.scrollHeight;
+                            // Notification sonore subtile si le document est actif
+                            if (!document.hidden) {
+                                document.title = '💬 Nouveau message - Messagerie';
+                                setTimeout(() => { document.title = 'Tableau de bord - École Al-Nour'; }, 3000);
+                            }
+                        }
+                    }
+                })
+                .catch(() => { setOffline(); });
+            }, 4000);
+
+            // Clean up polling when the panel is replaced
+            document.body.addEventListener('htmx:beforeSwap', function swapHandler(e) {
+                if (e.detail.target.id === 'mainContent') {
+                    isPolling = false;
+                    clearInterval(pollInterval);
+                    document.body.removeEventListener('htmx:beforeSwap', swapHandler);
+                }
+            });
+        </script>
+
+
+        {% else %}
+        <div class="empty-state" style="flex: 1;">
+            <i class="ti ti-message" aria-hidden="true" style="font-size: 32px;"></i>
+            Sélectionnez une discussion pour commencer à discuter.
+        </div>
+        {% endif %}
+    </div>
+</div>

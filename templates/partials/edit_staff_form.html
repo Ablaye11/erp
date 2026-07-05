@@ -1,0 +1,69 @@
+<!-- Formulaire d'édition du profil personnel administratif -->
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'view_staff_profile' staff.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Personnel Admin.'">
+        <i class="ti ti-arrow-left"></i> Annuler
+    </button>
+    <h2 style="font-size:14px; font-weight:700; color:var(--color-text-primary); display:flex; align-items:center; gap:8px; margin:0;">
+        <i class="ti ti-edit" style="color:var(--color-primary);"></i>
+        Modifier le profil de {{ staff.user.get_full_name }}
+    </h2>
+</div>
+
+<div id="editStaffResult"></div>
+
+<form hx-post="{% url 'edit_staff' staff.id %}"
+      hx-target="#editStaffResult"
+      hx-swap="innerHTML">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:15px; max-width:600px;">
+        <h3 style="font-size:13px; font-weight:600; margin-bottom:16px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+            <i class="ti ti-id"></i> Informations administratives
+        </h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Prénom *</label>
+                <input type="text" name="first_name" value="{{ staff.user.first_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Prénom">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom *</label>
+                <input type="text" name="last_name" value="{{ staff.user.last_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Nom de famille">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Adresse Email</label>
+                <input type="email" name="email" value="{{ staff.user.email }}"
+                       style="width:100%; font-size:13px;" placeholder="email@exemple.com">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Poste / Fonction *</label>
+                <select name="position" required style="width:100%; font-size:13px;">
+                    {% for pos in positions %}
+                    <option value="{{ pos }}" {% if staff.position == pos %}selected{% endif %}>{{ pos }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom d'utilisateur</label>
+                <input type="text" value="{{ staff.user.username }}" disabled
+                       style="width:100%; font-size:13px; opacity:0.6; cursor:not-allowed; background:var(--color-background-tertiary);">
+                <span style="font-size:10px; color:var(--color-text-tertiary);">Non modifiable</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex; gap:10px; justify-content:flex-end; max-width:600px;">
+        <button type="button" class="btn"
+                hx-get="{% url 'view_staff_profile' staff.id %}" hx-target="#mainContent"
+                style="font-size:13px;">
+            <i class="ti ti-x"></i> Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" style="font-size:13px; padding:8px 20px;">
+            <i class="ti ti-device-floppy"></i> Enregistrer les modifications
+        </button>
+    </div>
+</form>

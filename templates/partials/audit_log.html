@@ -1,0 +1,74 @@
+<div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i class="ti ti-shield-lock" style="color: var(--color-primary); font-size: 20px;"></i>
+        Journal d'audit & Activité Sécurité
+    </h2>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Action effectuée</th>
+                <th>Composant</th>
+                <th>ID Objet</th>
+                <th>Date & Heure</th>
+                <th>Adresse IP</th>
+                <th style="width: 250px;">Changements</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td style="font-weight: 600; color: var(--color-text-primary);">
+                    {% if log.user %}
+                        <i class="ti ti-user" style="color: var(--color-primary); margin-right: 4px;"></i>
+                        {{ log.user.get_full_name|default:log.user.username }}
+                    {% else %}
+                        <i class="ti ti-device-computer-camera" style="color: var(--color-text-tertiary); margin-right: 4px;"></i>
+                        <span style="color: var(--color-text-tertiary); font-style: italic;">Système</span>
+                    {% endif %}
+                </td>
+                <td style="color: var(--color-text-primary); font-weight: 500;">
+                    {{ log.action }}
+                </td>
+                <td>
+                    {% if log.model_name %}
+                        <span class="badge" style="background: rgba(83, 74, 183, 0.15); color: #a99ef8;">
+                            {{ log.model_name }}
+                        </span>
+                    {% else %}
+                        <span style="color: var(--color-text-tertiary);">—</span>
+                    {% endif %}
+                </td>
+                <td style="font-family: monospace; font-size: 11px;">
+                    {{ log.object_id|default:"—" }}
+                </td>
+                <td style="color: var(--color-text-secondary); font-size: 12px;">
+                    {{ log.timestamp|date:"d M Y H:i:s" }}
+                </td>
+                <td style="font-family: monospace; font-size: 11px; color: var(--color-text-secondary);">
+                    {{ log.ip_address|default:"—" }}
+                </td>
+                <td>
+                    {% if log.changes %}
+                        <div style="font-size: 10.5px; font-family: monospace; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; max-height: 60px; overflow-y: auto; color: #a99ef8; border: 1px solid rgba(255,255,255,0.05);">
+                            {{ log.changes }}
+                        </div>
+                    {% else %}
+                        <span style="color: var(--color-text-tertiary); font-style: italic; font-size: 11px;">Aucun détail</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 30px; color: var(--color-text-tertiary);">
+                    <i class="ti ti-database-off" style="font-size: 28px; display: block; margin-bottom: 8px;"></i>
+                    Aucune action enregistrée dans le journal d'audit pour le moment.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

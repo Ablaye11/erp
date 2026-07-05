@@ -1,0 +1,72 @@
+<div class="section-title">Évolution trimestrielle — {{ student_name }}</div>
+<div class="two-col">
+    <!-- Moyenne générale -->
+    <div class="card">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 15px;">Moyenne générale</div>
+        {% for term in progression_terms %}
+        <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>{{ term.term }}</span>
+                <span data-style-color="{{ term.color }}" style="font-weight: 600;">{{ term.score }}{% if term.score != '—' %}/20{% endif %}</span>
+            </div>
+            <div class="note-bar">
+                <div class="note-fill" data-style-width="{{ term.pct }}%" data-style-background="{{ term.color }}"></div>
+            </div>
+        </div>
+        {% endfor %}
+        <div style="margin-top: 15px; padding: 10px; background: var(--color-background-tertiary); border-radius: var(--border-radius-md);">
+            <div style="font-size: 11px; color: var(--color-text-secondary);">Tendance</div>
+            <div style="font-size: 13px; color: #1D9E75; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                <i class="ti ti-trending-up" aria-hidden="true"></i> +0.4 point entre T1 et T2
+            </div>
+        </div>
+    </div>
+
+    <!-- Par matière -->
+    <div class="card">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 15px;">Par matière — T1 vs T2</div>
+        
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">
+                <span>Mathématiques</span>
+                <span>T1: 16 &rarr; T2: <strong style="color: #1D9E75;">17</strong></span>
+            </div>
+            <div class="note-bar" style="height: 6px;">
+                <div class="note-fill" style="width: 85%; background: #AFA9EC;"></div>
+            </div>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">
+                <span>Français</span>
+                <span>T1: 14 &rarr; T2: <strong style="color: var(--color-text-primary);">14</strong></span>
+            </div>
+            <div class="note-bar" style="height: 6px;">
+                <div class="note-fill" style="width: 70%; background: #AFA9EC;"></div>
+            </div>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">
+                <span>Histoire-Géo</span>
+                <span>T1: 15 &rarr; T2: <strong style="color: #1D9E75;">16</strong></span>
+            </div>
+            <div class="note-bar" style="height: 6px;">
+                <div class="note-fill" style="width: 80%; background: #AFA9EC;"></div>
+            </div>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px;">
+                <span>Sciences (SVT)</span>
+                <span>T1: 16 &rarr; T2: <strong style="color: #E24B4A;">15</strong></span>
+            </div>
+            <div class="note-bar" style="height: 6px;">
+                <div class="note-fill" style="width: 75%; background: #AFA9EC;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('[data-style-color]').forEach(el => el.style.color = el.getAttribute('data-style-color'));
+    document.querySelectorAll('[data-style-width]').forEach(el => el.style.width = el.getAttribute('data-style-width'));
+    document.querySelectorAll('[data-style-background]').forEach(el => el.style.background = el.getAttribute('data-style-background'));
+</script>

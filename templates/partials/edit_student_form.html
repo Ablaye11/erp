@@ -1,0 +1,106 @@
+<!-- Formulaire d'édition du profil élève -->
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'view_student_profile' student.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Profil Élève'">
+        <i class="ti ti-arrow-left"></i> Annuler
+    </button>
+    <h2 style="font-size:14px; font-weight:700; color:var(--color-text-primary); display:flex; align-items:center; gap:8px; margin:0;">
+        <i class="ti ti-edit" style="color:var(--color-primary);"></i>
+        Modifier le profil de {{ student.user.get_full_name }}
+    </h2>
+</div>
+
+<div id="editStudentResult"></div>
+
+<form hx-post="{% url 'edit_student' student.id %}"
+      hx-target="#editStudentResult"
+      hx-swap="innerHTML">
+    {% csrf_token %}
+
+    <!-- Informations de base -->
+    <div class="card" style="margin-bottom:15px;">
+        <h3 style="font-size:13px; font-weight:600; margin-bottom:16px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+            <i class="ti ti-user"></i> Identité
+        </h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Prénom *</label>
+                <input type="text" name="first_name" value="{{ student.user.first_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Prénom">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom *</label>
+                <input type="text" name="last_name" value="{{ student.user.last_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Nom de famille">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Date de naissance</label>
+                <input type="date" name="birth_date" value="{{ student.birth_date|date:'Y-m-d'|default:'' }}"
+                       style="width:100%; font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Lieu de naissance</label>
+                <input type="text" name="birth_place" value="{{ student.birth_place|default:'' }}"
+                       style="width:100%; font-size:13px;" placeholder="Ex: Dakar">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Adresse Email</label>
+                <input type="email" name="email" value="{{ student.user.email }}"
+                       style="width:100%; font-size:13px;" placeholder="email@exemple.com">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom d'utilisateur</label>
+                <input type="text" value="{{ student.user.username }}" disabled
+                       style="width:100%; font-size:13px; opacity:0.6; cursor:not-allowed; background:var(--color-background-tertiary);">
+                <span style="font-size:10px; color:var(--color-text-tertiary);">Non modifiable</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scolarité -->
+    <div class="card" style="margin-bottom:15px;">
+        <h3 style="font-size:13px; font-weight:600; margin-bottom:16px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+            <i class="ti ti-school"></i> Scolarité
+        </h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Classe *</label>
+                <select name="class_id" required style="width:100%; font-size:13px;">
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if student.class_room and student.class_room.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Parent / Tuteur</label>
+                <select name="parent_id" style="width:100%; font-size:13px;">
+                    <option value="">— Aucun parent lié —</option>
+                    {% for p in parents %}
+                    <option value="{{ p.parent_profile.id }}" {% if student.parent and student.parent.id == p.parent_profile.id %}selected{% endif %}>
+                        {{ p.get_full_name }} {% if p.parent_profile.phone %}({{ p.parent_profile.phone }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">N° Matricule</label>
+                <input type="text" value="{{ student.registration_number }}" disabled
+                       style="width:100%; font-size:13px; opacity:0.6; cursor:not-allowed; background:var(--color-background-tertiary);">
+                <span style="font-size:10px; color:var(--color-text-tertiary);">Généré automatiquement</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn"
+                hx-get="{% url 'view_student_profile' student.id %}" hx-target="#mainContent"
+                style="font-size:13px;">
+            <i class="ti ti-x"></i> Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" style="font-size:13px; padding:8px 20px;">
+            <i class="ti ti-device-floppy"></i> Enregistrer les modifications
+        </button>
+    </div>
+</form>

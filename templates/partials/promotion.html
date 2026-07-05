@@ -1,0 +1,219 @@
+{% load static %}
+
+<!-- ============================================================
+     PANNEAU : GESTION PROMOTIONS / FIN D'ANNÉE
+     ============================================================ -->
+<style>
+  .color-promoted { color: #1a9e5c !important; }
+  .color-repeated { color: #f59e0b !important; }
+</style>
+<div style="display:flex; flex-direction:column; gap:20px;">
+
+  <!-- TITRE -->
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#f97316);display:flex;align-items:center;justify-content:center;">
+        <i class="ti ti-award" style="color:white;font-size:20px;"></i>
+      </div>
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--color-text-primary);margin:0;">Gestion de fin d'année</h2>
+        <p style="font-size:12px;color:var(--color-text-secondary);margin:2px 0 0;">Promouvoir les élèves ou confirmer les redoublements</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 1 : SÉLECTION DE LA CLASSE ACTUELLE -->
+  <div class="card" style="padding:20px;">
+    <h3 style="font-size:14px;font-weight:700;color:var(--color-text-primary);margin:0 0 14px;display:flex;align-items:center;gap:8px;">
+      <i class="ti ti-filter" style="color:var(--color-primary);"></i> Étape 1 — Sélectionner la classe actuelle
+    </h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:220px;">
+        <label style="font-size:12px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Classe</label>
+        <select id="promotion-class-select"
+                name="class_id"
+                hx-get="{% url 'load_promotion_students' %}"
+                hx-target="#mainContent"
+                hx-include="this"
+                hx-trigger="change"
+                style="width:100%;padding:8px 12px;border-radius:var(--border-radius-sm);border:1px solid var(--color-border);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;">
+          <option value="">-- Sélectionner une classe --</option>
+          {% for cls in all_classes %}
+          <option value="{{ cls.id }}" {% if selected_class and selected_class.id == cls.id %}selected{% endif %}>
+            {{ cls.name }} ({{ cls.level }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNEAU RÉSULTATS (mis à jour par HTMX) -->
+  <div id="promotion-panel">
+    {% if selected_class and students %}
+    <!-- ÉTAPE 2 : LISTE DES ÉLÈVES -->
+    <div class="card" style="padding:20px;">
+      <h3 style="font-size:14px;font-weight:700;color:var(--color-text-primary);margin:0 0 6px;display:flex;align-items:center;gap:8px;">
+        <i class="ti ti-users" style="color:var(--color-primary);"></i> Étape 2 — Décision par élève
+        <span style="font-size:12px;color:var(--color-text-secondary);font-weight:400;">({{ students|length }} élève(s))</span>
+        
+        <!-- Bouton Impression -->
+        <a href="{% url 'print_promotion_report' selected_class.id %}" target="_blank" class="btn" style="margin-left:auto; font-size:11px; padding:6px 12px; background:var(--color-background-tertiary); border:1px solid var(--color-border); color:var(--color-text-primary); display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+            <i class="ti ti-printer" aria-hidden="true"></i> Imprimer le Bilan
+        </a>
+      </h3>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 16px;">Pour chaque élève, les suggestions sont pré-cochées en fonction de la moyenne annuelle (admis si ≥ 9.50/20).</p>
+
+      <form id="promotion-form"
+            hx-post="{% url 'execute_promotion' %}"
+            hx-target="#promotion-result-container"
+            hx-swap="innerHTML"
+            style="display:flex;flex-direction:column;gap:0;">
+        {% csrf_token %}
+
+        <!-- Classe de destination pour les promus -->
+        <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <label style="font-size:12px;font-weight:600;color:var(--color-text-secondary);display:block;margin-bottom:6px;">
+              <i class="ti ti-arrow-up-right"></i> Classe de destination (pour les promus)
+            </label>
+            <select name="next_class"
+                    style="width:100%;padding:8px 12px;border-radius:var(--border-radius-sm);border:1px solid var(--color-border);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;">
+              <option value="">-- Aucune (à assigner manuellement) --</option>
+              {% for cls in all_classes %}
+              {% if not selected_class or cls.id != selected_class.id %}
+              <option value="{{ cls.id }}">{{ cls.name }} ({{ cls.level }})</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:2px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--color-text-primary);">
+              <input type="checkbox" name="advance_year" value="1"
+                     style="accent-color:var(--color-primary);width:16px;height:16px;">
+              <span>Passer à l'année suivante</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- En-têtes du tableau -->
+        <div style="display:grid;grid-template-columns:1fr 100px 120px 120px;gap:8px;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-sm);margin-bottom:6px;font-size:12px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.5px;">
+          <span>Élève</span>
+          <span style="text-align:center;">Moy. Annuelle</span>
+          <span style="text-align:center;color:#1a9e5c;">✔ Promu</span>
+          <span style="text-align:center;color:#f59e0b;">↩ Redoublant</span>
+        </div>
+
+        <!-- Lignes élèves -->
+        {% for student in students %}
+        <div style="display:grid;grid-template-columns:1fr 100px 120px 120px;gap:8px;padding:10px 12px;border-bottom:1px solid var(--color-border);align-items:center;transition:background .15s;"
+             onmouseover="this.style.background='var(--color-background-secondary)'"
+             onmouseout="this.style.background='transparent'">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+              {% if student.user.avatar %}
+              <img src="{{ student.user.avatar.url }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+              {% else %}
+              {{ student.user.first_name|slice:":1" }}{{ student.user.last_name|slice:":1" }}
+              {% endif %}
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);">{{ student.user.get_full_name }}</div>
+              <div style="font-size:11px;color:var(--color-text-secondary);">{{ student.registration_number|default:"—" }}</div>
+            </div>
+          </div>
+          <!-- Moyenne Annuelle -->
+          <div style="text-align:center; font-weight:700; font-size:13px;" class="{% if student.suggest_promotion %}color-promoted{% else %}color-repeated{% endif %}">
+            {{ student.annual_average|floatformat:2 }}/20
+          </div>
+          <!-- Radio Promu -->
+          <div style="display:flex;justify-content:center;">
+            <label style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:2px solid #1a9e5c;cursor:pointer;transition:background .15s;"
+                   title="Promouvoir cet élève">
+              <input type="radio" name="decision_{{ student.id }}" value="promoted"
+                     onchange="updateHiddenField(this)"
+                     data-student-id="{{ student.id }}"
+                     style="position:absolute;opacity:0;width:0;height:0;"
+                     {% if student.suggest_promotion %}checked{% endif %}>
+              <i class="ti ti-check" style="color:#1a9e5c;font-size:16px;"></i>
+            </label>
+          </div>
+          <!-- Radio Redoublant -->
+          <div style="display:flex;justify-content:center;">
+            <label style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:2px solid #f59e0b;cursor:pointer;transition:background .15s;"
+                   title="Redoublement">
+              <input type="radio" name="decision_{{ student.id }}" value="repeated"
+                     onchange="updateHiddenField(this)"
+                     data-student-id="{{ student.id }}"
+                     style="position:absolute;opacity:0;width:0;height:0;"
+                     {% if not student.suggest_promotion %}checked{% endif %}>
+              <i class="ti ti-refresh" style="color:#f59e0b;font-size:16px;"></i>
+            </label>
+          </div>
+        </div>
+        <!-- Champs cachés soumis au serveur -->
+        <input type="hidden" name="{% if student.suggest_promotion %}promoted{% else %}repeated{% endif %}" value="{{ student.id }}" id="hidden_{{ student.id }}">
+        {% endfor %}
+
+        <!-- BOUTON VALIDER -->
+        <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+          <button type="submit" class="btn btn-primary"
+                  style="padding:10px 24px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;">
+            <i class="ti ti-checks"></i> Valider les décisions
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Zone résultat -->
+    <div id="promotion-result-container"></div>
+
+    {% elif selected_class %}
+    <div class="card" style="padding:20px;text-align:center;color:var(--color-text-secondary);">
+      <i class="ti ti-mood-empty" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+      Aucun élève inscrit dans cette classe.
+    </div>
+    {% else %}
+    <div class="card" style="padding:20px;text-align:center;color:var(--color-text-secondary);border:2px dashed var(--color-border);">
+      <i class="ti ti-click" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+      Sélectionnez une classe pour commencer.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+// Met à jour les champs cachés selon le choix radio (promu / redoublant)
+function updateHiddenField(el) {
+  var studentId = el.getAttribute('data-student-id');
+  var decision = el.value;
+  var hidden = document.getElementById('hidden_' + studentId);
+  if (!hidden) return;
+
+  if (decision === 'promoted') {
+    hidden.name = 'promoted';
+    hidden.value = studentId;
+  } else {
+    hidden.name = 'repeated';
+    hidden.value = studentId;
+  }
+
+  // Mettre à jour visuellement les boutons
+  var radios = document.querySelectorAll('input[name="decision_' + studentId + '"]');
+  radios.forEach(function(r) {
+    var lbl = r.parentElement;
+    if (r.value === 'promoted') { lbl.style.background = r.checked ? 'rgba(26,158,92,0.15)' : ''; }
+    if (r.value === 'repeated') { lbl.style.background = r.checked ? 'rgba(245,158,11,0.15)' : ''; }
+  });
+}
+
+// Initialisation : coloriser les radios sélectionnés
+document.querySelectorAll('input[type="radio"]').forEach(function(r) {
+  var lbl = r.parentElement;
+  if (r.checked) {
+    if (r.value === 'promoted') { lbl.style.background = 'rgba(26,158,92,0.15)'; }
+    if (r.value === 'repeated') { lbl.style.background = 'rgba(245,158,11,0.15)'; }
+  }
+});
+</script>

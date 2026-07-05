@@ -1,0 +1,32 @@
+<div class="table-wrap" style="overflow-x: auto;">
+    <table style="min-width: 500px; text-align: center;">
+        <thead>
+            <tr>
+                <th style="width: 80px; text-align: center;">Horaire</th>
+                <th style="text-align: center;">Lundi</th>
+                <th style="text-align: center;">Mardi</th>
+                <th style="text-align: center;">Mercredi</th>
+                <th style="text-align: center;">Jeudi</th>
+                <th style="text-align: center;">Vendredi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in schedule %}
+            <tr>
+                <td style="font-size: 11.5px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-background-tertiary);">
+                    {{ row.time }}
+                </td>
+                {% for s in row.days %}
+                {% if s == '—' %}
+                <td style="color: var(--color-text-tertiary); background: var(--color-background-tertiary);">—</td>
+                {% else %}
+                <td style="font-size: 11px; background: var(--color-primary-light); color: var(--color-primary); font-weight: 500;">
+                    {{ s }}
+                </td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

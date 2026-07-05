@@ -1,0 +1,348 @@
+<!-- Modale de prévisualisation -->
+<div id="docPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-lg); width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.35); overflow:hidden;">
+
+<!-- Modale de confirmation de suppression stylisée -->
+<div id="confirmDeleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); z-index:10100; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); width:100%; max-width:400px; padding:24px; box-shadow:var(--shadow-lg); text-align:center; border:1px solid var(--color-border); animation: fadeInUp 0.2s ease;">
+        <div style="width:52px; height:52px; border-radius:50%; background:#FCEBEB; color:#A32D2D; display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 16px auto; border: 1px solid rgba(163, 45, 45, 0.2);">
+            <i class="ti ti-trash"></i>
+        </div>
+        <h3 style="font-size:15px; font-weight:700; color:var(--color-text-primary); margin-bottom:8px;">Supprimer le document</h3>
+        <p style="font-size:12.5px; color:var(--color-text-secondary); margin-bottom:24px; line-height:1.5;">Êtes-vous sûr de vouloir supprimer ce document ? Cette action est définitive et irréversible.</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="btnConfirmDeleteYes" class="btn btn-danger" style="padding:8px 16px; font-size:12px; font-weight:600; background:#A32D2D; color:#fff; border:none; border-radius:var(--border-radius-sm); cursor:pointer;">Oui, supprimer</button>
+            <button onclick="closeConfirmDelete()" class="btn" style="padding:8px 16px; font-size:12px; font-weight:600; border:1px solid var(--color-border); border-radius:var(--border-radius-sm); background:transparent; color:var(--color-text-primary); cursor:pointer;">Annuler</button>
+        </div>
+    </div>
+</div>
+        <!-- Header modale -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--color-border-tertiary); flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div id="previewFileIcon" style="font-size:22px;"></div>
+                <div>
+                    <div id="previewFileName" style="font-size:14px; font-weight:700; color:var(--color-text-primary);"></div>
+                    <div id="previewFileMeta" style="font-size:11px; color:var(--color-text-tertiary); margin-top:2px;"></div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a id="previewOpenNew" href="#" target="_blank" class="btn" style="padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="ti ti-external-link"></i> Ouvrir dans un onglet
+                </a>
+                <a id="previewDownload" href="#" download class="btn btn-primary" style="padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="ti ti-download"></i> Télécharger
+                </a>
+                <button onclick="closeDocPreview()" style="background:none; border:none; cursor:pointer; padding:6px; border-radius:50%; color:var(--color-text-secondary); font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='var(--color-background-tertiary)'" onmouseout="this.style.background='none'">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Corps de la modale -->
+        <div id="previewBody" style="flex:1; overflow:auto; min-height:400px; background:var(--color-background-primary); display:flex; align-items:center; justify-content:center;">
+            <!-- Contenu injecté dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Barre d'actions et recherche -->
+<div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+    <button class="btn btn-primary" onclick="toggleUploadDocForm()">
+        <i class="ti ti-upload" aria-hidden="true"></i> Uploader un document
+    </button>
+    <input type="text" id="docSearchInput" onkeyup="filterDocs()" placeholder="🔍  Rechercher un document..." style="flex: 1; font-size: 12px; min-width: 150px; padding: 8px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); color: var(--color-text-primary);">
+</div>
+
+<!-- Upload Doc Inline Form -->
+<div id="uploadDocForm" class="card" style="display: none; margin-bottom: 15px; background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 10px; font-size: 13px;"><i class="ti ti-file-plus" aria-hidden="true"></i> Uploader un nouveau document</h3>
+    <form hx-post="{% url 'upload_document' %}" hx-target="#mainContent" hx-encoding="multipart/form-data" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" name="name" placeholder="Nom descriptif (laisser vide pour utiliser le nom du fichier)" style="flex: 1; min-width: 200px;">
+            <select name="category" required style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);">
+                <option value="ELEVES">Dossiers élèves</option>
+                <option value="BULLETINS">Bulletins</option>
+                <option value="COURRIERS">Courriers</option>
+                <option value="CONTRATS">Contrats</option>
+                <option value="BUDGETS">Budgets</option>
+                <option value="REGLEMENTS">Règlements</option>
+            </select>
+            <input type="file" name="file" required style="font-size: 12px; max-width: 250px;">
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary">Uploader le fichier</button>
+            <button type="button" class="btn" onclick="toggleUploadDocForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+
+<!-- Categories Folders Section -->
+<h3 style="font-size: 14px; font-weight: 600; margin: 15px 0 10px 0; color: var(--color-text-primary);">Dossiers par Catégories</h3>
+<div class="three-col" style="margin-bottom: 20px;">
+    {% for cat in categories %}
+    <div style="padding: 14px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); cursor: pointer; background: var(--color-background-secondary); transition: all 0.2s; position:relative; overflow:hidden;"
+         onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)';"
+         onmouseleave="this.style.transform=''; this.style.boxShadow='';"
+         onclick="filterByCategory('{{ cat.code }}', this)">
+        <div data-style-background="{{ cat.bg }}" data-style-color="{{ cat.color }}" style="width: 38px; height: 38px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 10px;">
+            <i class="ti {{ cat.icon }}" aria-hidden="true"></i>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--color-text-primary);">{{ cat.name }}</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">
+            <span class="cat-count-{{ cat.code }}">{{ cat.size }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Files List Section -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-text-primary); margin: 0;">Fichiers &amp; Documents récents</h3>
+    <span id="activeFilterBadge" class="badge bb" style="display: none; cursor: pointer; padding:5px 10px; font-size:11px;" onclick="clearCategoryFilter()">
+        Filtre : <span id="activeFilterName"></span> &nbsp; <i class="ti ti-x"></i>
+    </span>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Nom du document</th>
+                <th>Catégorie</th>
+                <th>Taille</th>
+                <th>Ajouté par</th>
+                <th>Date d'ajout</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="documentsTableBody">
+            {% for doc in documents %}
+            <tr class="document-row" data-name="{{ doc.name|lower }}" data-category="{{ doc.category }}" style="cursor:pointer;">
+                <td style="font-weight: 600; color: var(--color-text-primary);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        {% if doc.file %}
+                            {% if '.pdf' in doc.file.name|lower %}
+                                <i class="ti ti-file-type-pdf" style="color: #A32D2D; font-size: 20px; flex-shrink:0;"></i>
+                            {% elif '.jpg' in doc.file.name|lower or '.png' in doc.file.name|lower or '.jpeg' in doc.file.name|lower or '.webp' in doc.file.name|lower %}
+                                <i class="ti ti-photo" style="color: #1D9E75; font-size: 20px; flex-shrink:0;"></i>
+                            {% elif '.xlsx' in doc.file.name|lower or '.xls' in doc.file.name|lower or '.csv' in doc.file.name|lower %}
+                                <i class="ti ti-file-spreadsheet" style="color: #0F6E56; font-size: 20px; flex-shrink:0;"></i>
+                            {% else %}
+                                <i class="ti ti-file-text" style="color: #185FA5; font-size: 20px; flex-shrink:0;"></i>
+                            {% endif %}
+                        {% else %}
+                            <i class="ti ti-file-text" style="color: var(--color-text-tertiary); font-size: 20px; flex-shrink:0;"></i>
+                        {% endif %}
+                        <!-- Nom cliquable pour prévisualiser -->
+                        <span onclick="openDocPreview(this)"
+                              data-preview-name="{{ doc.name }}"
+                              data-preview-url="{% if doc.file %}{{ doc.file.url }}{% endif %}"
+                              data-preview-info="{{ doc.file_info|default:'' }}"
+                              data-preview-category="{{ doc.category }}"
+                              style="color:var(--color-primary); text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; cursor:pointer;"
+                              title="Cliquer pour prévisualiser">
+                            {{ doc.name }}
+                        </span>
+                    </div>
+                </td>
+                <td><span class="badge bb">{{ doc.get_category_display }}</span></td>
+                <td><span class="badge bt">{{ doc.file_info }}</span></td>
+                <td style="font-size: 11.5px; color: var(--color-text-secondary);">{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}</td>
+                <td style="font-size: 11.5px; color: var(--color-text-secondary);">{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                        {% if doc.file %}
+                        <button class="btn" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"
+                                onclick="openDocPreview(this)"
+                                data-preview-name="{{ doc.name }}"
+                                data-preview-url="{{ doc.file.url }}"
+                                data-preview-info="{{ doc.file_info|default:'' }}"
+                                data-preview-category="{{ doc.category }}"
+                                title="Prévisualiser">
+                            <i class="ti ti-eye"></i> Voir
+                        </button>
+                        <a href="{{ doc.file.url }}" download class="btn" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="ti ti-download"></i>
+                        </a>
+                        {% endif %}
+                        {% if active_role == 'admin' %}
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #FAEBEB; color: #A32D2D; border: 1px solid #F8D7DA;"
+                                hx-delete="{% url 'delete_document' doc.id %}"
+                                hx-target="#mainContent"
+                                hx-confirm="Êtes-vous sûr de vouloir supprimer ce document ?"
+                                title="Supprimer">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="empty-state" style="text-align: center; padding: 30px;">
+                    <i class="ti ti-file-off" aria-hidden="true" style="font-size: 32px;"></i>
+                    Aucun document disponible. Uploadez votre premier document !
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // ── Appliquer les couleurs des catégories ─────────────────────────────────
+    document.querySelectorAll('[data-style-background]').forEach(el => {
+        el.style.background = el.getAttribute('data-style-background');
+        el.style.color = el.getAttribute('data-style-color');
+    });
+
+    // ── Compteurs réels par catégorie ─────────────────────────────────────────
+    const allRows = document.querySelectorAll('.document-row');
+    const catCodes = ['ELEVES','BULLETINS','COURRIERS','CONTRATS','BUDGETS','REGLEMENTS'];
+    catCodes.forEach(code => {
+        const count = document.querySelectorAll(`.document-row[data-category="${code}"]`).length;
+        const el = document.querySelector(`.cat-count-${code}`);
+        if (el) el.textContent = count + (count > 1 ? ' fichiers' : ' fichier');
+    });
+
+    // ── Toggle formulaire d'upload ────────────────────────────────────────────
+    function toggleUploadDocForm() {
+        const form = document.getElementById('uploadDocForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ── Filtre catégorie + recherche ──────────────────────────────────────────
+    let selectedCategory = '';
+    function filterDocs() {
+        const query = document.getElementById('docSearchInput').value.toLowerCase().trim();
+        document.querySelectorAll('.document-row').forEach(row => {
+            const nameMatch = row.getAttribute('data-name').includes(query);
+            const catMatch = !selectedCategory || row.getAttribute('data-category') === selectedCategory;
+            row.style.display = (nameMatch && catMatch) ? '' : 'none';
+        });
+    }
+    function filterByCategory(catCode, el) {
+        selectedCategory = catCode;
+        const badge = document.getElementById('activeFilterBadge');
+        document.getElementById('activeFilterName').textContent = el.querySelector('div:nth-child(2)').textContent.trim();
+        badge.style.display = 'inline-flex';
+        filterDocs();
+    }
+    function clearCategoryFilter() {
+        selectedCategory = '';
+        document.getElementById('activeFilterBadge').style.display = 'none';
+        filterDocs();
+    }
+
+    // ── Modale de prévisualisation ────────────────────────────────────────────
+    function openDocPreview(element) {
+        const name = element.getAttribute('data-preview-name');
+        const url = element.getAttribute('data-preview-url');
+        const info = element.getAttribute('data-preview-info');
+        const category = element.getAttribute('data-preview-category');
+
+        const btnOpenNew = document.getElementById('previewOpenNew');
+        const btnDownload = document.getElementById('previewDownload');
+        const modal = document.getElementById('docPreviewModal');
+
+        document.getElementById('previewFileName').textContent = name;
+        document.getElementById('previewFileMeta').textContent = info || category;
+
+        if (!url) {
+            // Afficher le message d'erreur stylisé avec CSS dans la modale
+            btnOpenNew.style.display = 'none';
+            btnDownload.style.display = 'none';
+            document.getElementById('previewFileIcon').innerHTML = '<i class="ti ti-alert-triangle" style="color:#D97706; font-size:22px;"></i>';
+            document.getElementById('previewBody').innerHTML = `
+                <div style="text-align:center;padding:50px 20px; color:var(--color-text-primary);">
+                    <i class="ti ti-file-off" style="font-size:64px;color:#D97706;display:block;margin-bottom:16px;"></i>
+                    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Aucun fichier physique rattaché</div>
+                    <div style="font-size:13px;color:var(--color-text-secondary);max-width:400px;margin:0 auto 24px auto;line-height:1.5;">
+                        Ce document a été enregistré dans la base de données (données de démonstration), mais aucun fichier réel n'est présent sur le serveur pour le moment.
+                    </div>
+                </div>`;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            return;
+        }
+
+        // Ré-afficher les boutons si masqués précédemment
+        btnOpenNew.style.display = 'inline-flex';
+        btnDownload.style.display = 'inline-flex';
+
+        btnOpenNew.href = url;
+        btnDownload.href = url;
+        btnDownload.download = name;
+
+        const lowerUrl = url.toLowerCase();
+        const body = document.getElementById('previewBody');
+        const icon = document.getElementById('previewFileIcon');
+
+        // Détecter le type de fichier
+        if (lowerUrl.includes('.pdf')) {
+            icon.innerHTML = '<i class="ti ti-file-type-pdf" style="color:#A32D2D;"></i>';
+            body.innerHTML = `<iframe src="${url}" style="width:100%;height:70vh;border:none;" title="${name}"></iframe>`;
+        } else if (/\.(jpg|jpeg|png|gif|webp|svg)/.test(lowerUrl)) {
+            icon.innerHTML = '<i class="ti ti-photo" style="color:#1D9E75;"></i>';
+            body.innerHTML = `<div style="padding:20px;text-align:center;"><img src="${url}" alt="${name}" style="max-width:100%;max-height:68vh;border-radius:var(--border-radius-md);box-shadow:var(--shadow-lg);object-fit:contain;"></div>`;
+        } else if (/\.(mp4|webm|ogg)/.test(lowerUrl)) {
+            icon.innerHTML = '<i class="ti ti-video" style="color:#534AB7;"></i>';
+            body.innerHTML = `<video src="${url}" controls style="max-width:100%;max-height:70vh;border-radius:var(--border-radius-md);">Votre navigateur ne supporte pas la vidéo.</video>`;
+        } else {
+            // Fichier non prévisualisable (Word, Excel, etc.)
+            icon.innerHTML = '<i class="ti ti-file-text" style="color:#185FA5;"></i>';
+            body.innerHTML = `
+                <div style="text-align:center;padding:50px 20px;">
+                    <i class="ti ti-file-description" style="font-size:64px;color:var(--color-text-tertiary);display:block;margin-bottom:16px;"></i>
+                    <div style="font-size:15px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px;">${name}</div>
+                    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:24px;">Ce type de fichier ne peut pas être prévisualisé directement dans le navigateur.</div>
+                    <a href="${url}" download class="btn btn-primary" style="padding:10px 20px;font-size:13px;">
+                        <i class="ti ti-download"></i> Télécharger pour ouvrir
+                    </a>
+                    <a href="${url}" target="_blank" class="btn" style="padding:10px 20px;font-size:13px;margin-left:8px;">
+                        <i class="ti ti-external-link"></i> Ouvrir dans un onglet
+                    </a>
+                </div>`;
+        }
+
+        modal.style.display = 'flex';
+        // Empêcher le scroll du body
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDocPreview() {
+        const modal = document.getElementById('docPreviewModal');
+        modal.style.display = 'none';
+        document.getElementById('previewBody').innerHTML = '';
+        document.body.style.overflow = '';
+    }
+
+    // Fermer avec Échap ou clic sur l'arrière-plan
+    document.getElementById('docPreviewModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDocPreview();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('docPreviewModal').style.display !== 'none') {
+            closeDocPreview();
+        }
+    });
+
+    // ── Intercepter les confirmations de suppression HTMX ─────────────────────
+    document.body.addEventListener('htmx:confirm', function(evt) {
+        if (evt.detail.question === "Êtes-vous sûr de vouloir supprimer ce document ?") {
+            evt.preventDefault(); // Empêcher la popup confirm() native
+
+            const modal = document.getElementById('confirmDeleteModal');
+            modal.style.display = 'flex';
+
+            document.getElementById('btnConfirmDeleteYes').onclick = function() {
+                evt.detail.issueRequest(); // Émettre la requête HTMX
+                closeConfirmDelete();
+            };
+        }
+    });
+
+    function closeConfirmDelete() {
+        document.getElementById('confirmDeleteModal').style.display = 'none';
+    }
+</script>

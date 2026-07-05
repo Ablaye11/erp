@@ -1,0 +1,21 @@
+# Dépendances — École Al-Nour ERP
+# Installer avec : pip install -r requirements.txt
+
+# ── Framework principal ───────────────────────────────────────────────
+Django>=5.0
+
+# ── Traitement des images (avatars, profils) ──────────────────────────
+Pillow
+
+# ── Protection brute-force des connexions ─────────────────────────────
+django-axes
+
+# ── API REST ──────────────────────────────────────────────────────────
+djangorestframework
+
+# ── Export Excel ──────────────────────────────────────────────────────
+openpyxl
+
+# ── PostgreSQL (production uniquement) ───────────────────────────────
+# Décommentez la ligne suivante si vous utilisez PostgreSQL :
+# psycopg2-binary

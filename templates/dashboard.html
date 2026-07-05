@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord - École Al-Nour{% endblock %}
+
+{% block content %}
+<!-- HTMX Progress Bar -->
+<div id="htmx-progress-bar"></div>
+
+<!-- Search results dropdown -->
+<div id="searchDropdown" style="display:none; position:fixed; top:64px; left:50%; transform:translateX(-50%); width:520px; max-width:90vw; background:var(--color-background-secondary); border:1px solid var(--color-border); border-radius:var(--border-radius-lg); box-shadow:var(--shadow-lg); z-index:9000; max-height:400px; overflow-y:auto;"></div>
+<div class="erp-shell">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">
+                <i class="ti ti-school" aria-hidden="true" style="color: #fff; font-size: 18px;"></i>
+            </div>
+            <div>
+                <div class="school-name">École Al-Nour</div>
+                <div class="school-sub">ERP v2.0</div>
+            </div>
+        </div>
+        
+        <!-- Sélecteur de rôle : uniquement pour les vrais administrateurs -->
+        {% if request.user.role == 'ADMIN' %}
+        <div class="role-switcher">
+            <select id="roleSelect" onchange="location.href='/switch-role/' + this.value + '/'">
+                <option value="admin" {% if active_role == 'admin' %}selected{% endif %}>👔 Administration</option>
+                <option value="prof" {% if active_role == 'prof' %}selected{% endif %}>📚 Enseignant</option>
+                <option value="eleve" {% if active_role == 'eleve' %}selected{% endif %}>🎓 Élève</option>
+                <option value="parent" {% if active_role == 'parent' %}selected{% endif %}>👨‍👩‍👧 Parent</option>
+            </select>
+        </div>
+        {% else %}
+        <!-- Affichage statique du rôle pour les non-admins -->
+        <div style="padding: 8px 12px; margin: 8px 0; background: var(--color-background-tertiary); border-radius: var(--border-radius-sm); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px;">
+            {% if active_role == 'prof' %}
+                <i class="ti ti-chalkboard" style="color: var(--color-primary);"></i> Enseignant
+            {% elif active_role == 'eleve' %}
+                <i class="ti ti-school" style="color: var(--color-primary);"></i> Élève
+            {% elif active_role == 'parent' %}
+                <i class="ti ti-heart" style="color: var(--color-primary);"></i> Parent d'élève
+            {% else %}
+                <i class="ti ti-user" style="color: var(--color-primary);"></i> {{ user_role_label }}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Navigation Menu based on Active Role -->
+        <div class="nav-section">
+            {% if active_role == 'admin' %}
+                <div class="nav-label">Principal</div>
+                <div class="nav-item active" hx-get="{% url 'load_panel' 'adminDash' %}" hx-target="#mainContent" data-title="Tableau de bord">
+                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Tableau de bord
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'notifications' %}" hx-target="#mainContent" data-title="Notifications">
+                    <i class="ti ti-bell" aria-hidden="true"></i>Notifications
+                    {% if unread_notifs_count > 0 %}<div class="notif-dot"></div>{% endif %}
+                </div>
+                
+                <div class="nav-label">Gestion</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'eleves' %}" hx-target="#mainContent" data-title="Élèves">
+                    <i class="ti ti-users" aria-hidden="true"></i>Élèves
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'profs' %}" hx-target="#mainContent" data-title="Enseignants">
+                    <i class="ti ti-chalkboard" aria-hidden="true"></i>Enseignants
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'congesProfs' %}" hx-target="#mainContent" data-title="Congés enseignants">
+                    <i class="ti ti-calendar-user" aria-hidden="true"></i>Congés enseignants
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'personnel' %}" hx-target="#mainContent" data-title="Personnel admin.">
+                    <i class="ti ti-id-badge" aria-hidden="true"></i>Personnel admin.
+                </div>
+                
+                <div class="nav-label">Académique</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'bulletins' %}" hx-target="#mainContent" data-title="Bulletins">
+                    <i class="ti ti-report" aria-hidden="true"></i>Bulletins
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'classement' %}" hx-target="#mainContent" data-title="Classement">
+                    <i class="ti ti-trophy" aria-hidden="true"></i>Classement des élèves
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'presences' %}" hx-target="#mainContent" data-title="Présences">
+                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>Présences
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'emploiAdmin' %}" hx-target="#mainContent" data-title="Emplois du temps">
+                    <i class="ti ti-calendar" aria-hidden="true"></i>Emplois du temps
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'planning' %}" hx-target="#mainContent" data-title="Planning scolaire">
+                    <i class="ti ti-calendar-event" aria-hidden="true"></i>Planning annuel
+                </div>
+                
+                <div class="nav-label">Finances</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'paiements' %}" hx-target="#mainContent" data-title="Paiements & Frais">
+                    <i class="ti ti-coin" aria-hidden="true"></i>Paiements & Frais
+                </div>
+                
+                <div class="nav-label">Documents</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'dossiers' %}" hx-target="#mainContent" data-title="Dossiers">
+                    <i class="ti ti-folder" aria-hidden="true"></i>Dossiers
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'messagerie' %}" hx-target="#mainContent" data-title="Messagerie">
+                    <i class="ti ti-message" aria-hidden="true"></i>Messagerie
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'settings' %}" hx-target="#mainContent" data-title="Paramètres">
+                    <i class="ti ti-settings" aria-hidden="true"></i>Paramètres
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'auditLog' %}" hx-target="#mainContent" data-title="Journal d'audit">
+                    <i class="ti ti-shield-lock" aria-hidden="true"></i>Journal d'audit
+                </div>
+                
+            {% elif active_role == 'prof' %}
+                <div class="nav-label">Principal</div>
+                <div class="nav-item active" hx-get="{% url 'load_panel' 'profDash' %}" hx-target="#mainContent" data-title="Mon tableau de bord">
+                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Mon tableau
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'notifications' %}" hx-target="#mainContent" data-title="Notifications">
+                    <i class="ti ti-bell" aria-hidden="true"></i>Notifications
+                    {% if unread_notifs_count > 0 %}<div class="notif-dot"></div>{% endif %}
+                </div>
+                
+                <div class="nav-label">Mes classes</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'mesEleves' %}" hx-target="#mainContent" data-title="Mes élèves">
+                    <i class="ti ti-users" aria-hidden="true"></i>Mes élèves
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'saisirNotes' %}" hx-target="#mainContent" data-title="Saisir les notes">
+                    <i class="ti ti-pencil" aria-hidden="true"></i>Saisir les notes
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'classement' %}" hx-target="#mainContent" data-title="Classement">
+                    <i class="ti ti-trophy" aria-hidden="true"></i>Classement
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'appel' %}" hx-target="#mainContent" data-title="Appel / Présences">
+                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>Appel / Présences
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'bulletinProf' %}" hx-target="#mainContent" data-title="Bulletins">
+                    <i class="ti ti-report" aria-hidden="true"></i>Bulletins
+                </div>
+                
+                <div class="nav-label">Outils</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'agenda' %}" hx-target="#mainContent" data-title="Mon agenda">
+                    <i class="ti ti-calendar" aria-hidden="true"></i>Mon agenda
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'messagerie' %}" hx-target="#mainContent" data-title="Messagerie">
+                    <i class="ti ti-message" aria-hidden="true"></i>Messagerie
+                </div>
+                
+            {% elif active_role == 'eleve' %}
+                <div class="nav-label">Mon espace</div>
+                <div class="nav-item active" hx-get="{% url 'load_panel' 'eleveDash' %}" hx-target="#mainContent" data-title="Tableau de bord">
+                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Tableau de bord
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'classement' %}" hx-target="#mainContent" data-title="Classement">
+                    <i class="ti ti-trophy" aria-hidden="true"></i>Classement
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'bulletin' %}" hx-target="#mainContent" data-title="Mon bulletin">
+                    <i class="ti ti-report" aria-hidden="true"></i>Mon bulletin
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'progression' %}" hx-target="#mainContent" data-title="Ma progression">
+                    <i class="ti ti-chart-line" aria-hidden="true"></i>Ma progression
+                </div>
+                
+                <div class="nav-label">Vie scolaire</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'emploi' %}" hx-target="#mainContent" data-title="Emploi du temps">
+                    <i class="ti ti-calendar" aria-hidden="true"></i>Emploi du temps
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'absencesEleve' %}" hx-target="#mainContent" data-title="Mes absences">
+                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>Mes absences
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'paiementEleve' %}" hx-target="#mainContent" data-title="Paiements">
+                    <i class="ti ti-coin" aria-hidden="true"></i>Paiements
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'messagerie' %}" hx-target="#mainContent" data-title="Messagerie">
+                    <i class="ti ti-message" aria-hidden="true"></i>Messagerie
+                </div>
+                
+            {% elif active_role == 'parent' %}
+                <div class="nav-label">Suivi enfant</div>
+                <div class="nav-item active" hx-get="{% url 'load_panel' 'parentDash' %}" hx-target="#mainContent" data-title="Suivi de mon enfant">
+                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Tableau de bord
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'classement' %}" hx-target="#mainContent" data-title="Classement">
+                    <i class="ti ti-trophy" aria-hidden="true"></i>Classement de la classe
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'bulletin' %}" hx-target="#mainContent" data-title="Bulletins de l'enfant">
+                    <i class="ti ti-report" aria-hidden="true"></i>Bulletins
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'progression' %}" hx-target="#mainContent" data-title="Progression scolaire">
+                    <i class="ti ti-chart-line" aria-hidden="true"></i>Progression
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'absencesEleve' %}" hx-target="#mainContent" data-title="Absences de l'enfant">
+                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>Absences
+                </div>
+                
+                <div class="nav-label">Finances</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'paiementEleve' %}" hx-target="#mainContent" data-title="Paiements de scolarité">
+                    <i class="ti ti-coin" aria-hidden="true"></i>Paiements
+                </div>
+                
+                <div class="nav-label">Communication</div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'messagerie' %}" hx-target="#mainContent" data-title="Messagerie">
+                    <i class="ti ti-message" aria-hidden="true"></i>Messagerie
+                </div>
+                <div class="nav-item" hx-get="{% url 'load_panel' 'notifications' %}" hx-target="#mainContent" data-title="Notifications">
+                    <i class="ti ti-bell" aria-hidden="true"></i>Notifications
+                    {% if unread_notifs_count > 0 %}<div class="notif-dot"></div>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main" id="mainArea">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <!-- Hamburger (mobile) -->
+                <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu" title="Menu">
+                    <i class="ti ti-menu-2" aria-hidden="true" style="font-size:20px;"></i>
+                </button>
+                <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+            </div>
+            
+            <div class="search-bar" style="position:relative;">
+                <i class="ti ti-search" aria-hidden="true"></i>
+                <input type="text" id="globalSearchInput"
+                    placeholder="Rechercher élève, prof, doc..."
+                    autocomplete="off"
+                    hx-get="{% url 'global_search' %}"
+                    hx-target="#searchDropdown"
+                    hx-trigger="keyup changed delay:400ms"
+                    hx-include="this"
+                    name="q"
+                    oninput="handleSearchInput(this)"
+                    onblur="setTimeout(()=>closeSearchDropdown(),200)"
+                    onfocus="if(this.value.length>1)document.getElementById('searchDropdown').style.display='block'">
+            </div>
+            
+            <div class="topbar-right">
+                <!-- Dark/Light Mode Toggle -->
+                <button id="themToggleBtn" onclick="toggleTheme()" title="Basculer le thème" style="background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:var(--border-radius-md);color:var(--color-text-secondary);display:flex;align-items:center;">
+                    <i class="ti ti-moon" id="themeIcon" aria-hidden="true" style="font-size:18px;"></i>
+                </button>
+
+                <div class="notif-btn" id="notifBtn"
+                     hx-get="{% url 'load_panel' 'notifications' %}" 
+                     hx-target="#mainContent"
+                     hx-push-url="false"
+                     onclick="setActiveByTitle('Notifications'); document.getElementById('topbarTitle').textContent='Notifications'; refreshNotifCount();"
+                     style="cursor:pointer;">
+                    <i class="ti ti-bell" aria-hidden="true" style="font-size: 18px; color: var(--color-text-secondary);"></i>
+                    <div id="notifBadgeWrap">
+                    {% if unread_notifs_count > 0 %}
+                    <div class="notif-badge" id="notifBadge">{{ unread_notifs_count }}</div>
+                    {% endif %}
+                    </div>
+                </div>
+                
+                <div class="user-info"
+                     hx-get="{% url 'load_panel' 'settings' %}"
+                     hx-target="#mainContent"
+                     onclick="setActiveByTitle('Paramètres'); document.getElementById('topbarTitle').textContent='Paramètres';"
+                     style="cursor:pointer;"
+                     title="Mon Profil / Paramètres">
+                    <div class="avatar" id="userAvatar" style="background:#EEEDFE; color:#534AB7; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        {% if request.user.avatar %}
+                            <img src="{{ request.user.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            {% if active_role == 'admin' %}AD
+                            {% elif active_role == 'prof' %}PR
+                            {% elif active_role == 'eleve' %}EL
+                            {% elif active_role == 'parent' %}PA
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="user-name-wrap">
+                        <div class="user-name" id="userName">{{ request.user.get_full_name|default:request.user.username }}</div>
+                        <div class="user-role" id="userRole">{{ user_role_label }}</div>
+                    </div>
+                    <a href="{% url 'logout' %}" class="logout-link" title="Se déconnecter" onclick="event.stopPropagation();">
+                        <i class="ti ti-logout" aria-hidden="true" style="font-size: 16px; color: #A32D2D; margin-left: 8px;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Sub-panel (HTMX Swapped) -->
+        <div class="content" id="mainContent">
+            <!-- Loader fallback while loading default panel -->
+            <div class="empty-state">
+                <i class="ti ti-loader animate-spin" style="font-size: 32px;" aria-hidden="true"></i>
+                Chargement du tableau de bord...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile sidebar overlay -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:900;"></div>
+
+<!-- Sidebar dynamic active state + topbar sync -->
+<script>
+    // ── Mobile Sidebar Toggle (C2) ──────────────────────────────────────────
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (!sidebar) return;
+        const isOpen = sidebar.classList.toggle('sidebar-open');
+        overlay.style.display = isOpen ? 'block' : 'none';
+    }
+
+    // ── Dark/Light Mode Toggle (C6) ─────────────────────────────────────────
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            icon.className = theme === 'dark' ? 'ti ti-sun' : 'ti ti-moon';
+        }
+        localStorage.setItem('erpTheme', theme);
+    }
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+    // Apply saved theme immediately — ou détecter le thème du système si jamais choisi
+    (function() {
+        const saved = localStorage.getItem('erpTheme');
+        if (saved) {
+            applyTheme(saved);
+        } else {
+            // Auto-détection du thème du système d'exploitation
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(prefersDark ? 'dark' : 'light');
+        }
+        // Écouter les changements de thème système en temps réel
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('erpTheme')) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    })();
+
+    // ── Global Search (B6) ──────────────────────────────────────────────────
+    function handleSearchInput(el) {
+        const dropdown = document.getElementById('searchDropdown');
+        if (el.value.length < 2) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+        } else {
+            dropdown.style.display = 'block';
+        }
+    }
+    function closeSearchDropdown() {
+        const dropdown = document.getElementById('searchDropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+    // ── Raccourci clavier Ctrl+K ou / pour ouvrir la recherche ───────────────
+    document.addEventListener('keydown', function(e) {
+        const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+        if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !isTyping)) {
+            e.preventDefault();
+            const inp = document.getElementById('globalSearchInput');
+            if (inp) { inp.focus(); inp.select(); }
+        }
+        // Échap pour fermer la recherche
+        if (e.key === 'Escape') { closeSearchDropdown(); }
+    });
+
+    // Close search on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-bar') && !e.target.closest('#searchDropdown')) {
+            closeSearchDropdown();
+        }
+    });
+    // After HTMX search response, make dropdown visible
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'searchDropdown') {
+            const inp = document.getElementById('globalSearchInput');
+            evt.detail.target.style.display = (inp && inp.value.length > 1) ? 'block' : 'none';
+            return;
+        }
+        if (evt.detail.target.id === 'mainContent') {
+            evt.detail.target.scrollTop = 0;
+            closeSearchDropdown();
+        }
+        if (evt.detail.requestConfig && evt.detail.requestConfig.path) {
+            const path = evt.detail.requestConfig.path;
+            if (path.includes('mark-notifs-read')) refreshNotifCount();
+        }
+    });
+
+    // ── Nav-item active state + topbar title ────────────────────────────────
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        const trigger = evt.detail.elt;
+        if (trigger && trigger.classList.contains('nav-item')) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            trigger.classList.add('active');
+            const title = trigger.getAttribute('data-title');
+            if (title) document.getElementById('topbarTitle').textContent = title;
+            // Close mobile sidebar on nav click
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('sidebar-open')) toggleSidebar();
+
+            // Persister le panel lors d'un rafraîchissement (F5)
+            if (evt.detail.requestConfig && evt.detail.requestConfig.path) {
+                const path = evt.detail.requestConfig.path;
+                const parts = path.split('/panel/');
+                if (parts.length > 1) {
+                    const panelParts = parts[1].split('/');
+                    const panelId = panelParts[0];
+                    const queryString = path.includes('?') ? path.split('?')[1] : '';
+                    sessionStorage.setItem('activePanel', panelId);
+                    sessionStorage.setItem('activePanelTitle', title || '');
+                    sessionStorage.setItem('activePanelParams', queryString || '');
+                }
+            }
+        }
+    });
+
+    // ── Notifications badge refresh ─────────────────────────────────────────
+    function refreshNotifCount() {
+        fetch('{% url "notif_count" %}')
+            .then(r => r.text())
+            .then(html => {
+                const wrap = document.getElementById('notifBadgeWrap');
+                if (wrap) wrap.innerHTML = html;
+            });
+    }
+    function setActiveByTitle(title) {
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('active');
+            if (el.getAttribute('data-title') === title) el.classList.add('active');
+        });
+    }
+    setInterval(refreshNotifCount, 60000);
+
+    // ── Barre de progression HTMX ────────────────────────────────────────────
+    const htmxBar = document.getElementById('htmx-progress-bar');
+    document.body.addEventListener('htmx:beforeRequest', function() {
+        if (htmxBar) { htmxBar.style.width = '30%'; }
+    });
+    document.body.addEventListener('htmx:afterRequest', function() {
+        if (htmxBar) {
+            htmxBar.style.width = '100%';
+            setTimeout(() => { htmxBar.style.width = '0%'; }, 400);
+        }
+    });
+
+    // ── Toast System ────────────────────────────────────────────────────────
+    function showToast(message, type = 'info') {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        let iconClass = 'ti-info-circle';
+        if (type === 'success') iconClass = 'ti-circle-check';
+        else if (type === 'error') iconClass = 'ti-alert-circle';
+        else if (type === 'warning') iconClass = 'ti-alert-triangle';
+        toast.innerHTML = `<div class="toast-content"><i class="ti ${iconClass}" aria-hidden="true"></i><span>${message}</span></div><button class="toast-close" onclick="this.parentElement.remove()">&times;</button>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity 0.5s'; setTimeout(()=>toast.remove(),500); }, 4000);
+    }
+
+    // ── HTMX Error Interceptors ─────────────────────────────────────────────
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        let msg = "Une erreur est survenue lors du traitement.";
+        if (evt.detail.xhr && evt.detail.xhr.responseText) {
+            const text = evt.detail.xhr.responseText;
+            if (text.length < 150 && !text.includes('<html') && !text.includes('<!DOCTYPE')) {
+                msg = text.replace(/<[^>]*>/g, '');
+            }
+        }
+        showToast(msg, 'error');
+    });
+    document.body.addEventListener('htmx:sendError', function() {
+        showToast("Erreur réseau : Impossible de joindre le serveur.", "error");
+    });
+
+    // ── Inactivity Auto-logout (A5) ─────────────────────────────────────────
+    let inactivityTimer, countdownInterval;
+    const INACTIVITY_TIMEOUT = 25 * 60 * 1000;
+    function startInactivityTimer() {
+        clearTimeout(inactivityTimer); clearInterval(countdownInterval);
+        inactivityTimer = setTimeout(showInactivityWarning, INACTIVITY_TIMEOUT);
+    }
+    function showInactivityWarning() {
+        const modal = document.getElementById('inactivityModal');
+        if (modal) modal.style.display = 'flex';
+        let secondsLeft = 300;
+        const countdownEl = document.getElementById('inactivityCountdown');
+        if (countdownEl) countdownEl.textContent = secondsLeft;
+        countdownInterval = setInterval(() => {
+            secondsLeft--;
+            if (countdownEl) countdownEl.textContent = secondsLeft;
+            if (secondsLeft <= 0) { clearInterval(countdownInterval); window.location.href = "{% url 'logout' %}"; }
+        }, 1000);
+    }
+    function resetInactivityTimer() {
+        const modal = document.getElementById('inactivityModal');
+        if (modal) modal.style.display = 'none';
+        startInactivityTimer();
+    }
+    ['mousemove','keydown','click','scroll'].forEach(ev => window.addEventListener(ev, startInactivityTimer));
+    startInactivityTimer();
+
+    // ── showPanel helper (used by HTMX response scripts) ───────────────────
+    function showPanel(panelId, title, extraParams) {
+        let url = `/panel/${panelId}/`;
+        if (extraParams) url += `?${extraParams}`;
+        htmx.ajax('GET', url, {target:'#mainContent', swap:'innerHTML'});
+        document.getElementById('topbarTitle').textContent = title;
+        setActiveByTitle(title);
+
+        // Sauvegarder dans la session
+        sessionStorage.setItem('activePanel', panelId);
+        sessionStorage.setItem('activePanelTitle', title || '');
+        sessionStorage.setItem('activePanelParams', extraParams || '');
+    }
+
+    // ── Profile update listener (C5) ────────────────────────────────────────
+    document.body.addEventListener('profileUpdated', function(evt) {
+        let msg = evt.detail.message || "Profil mis à jour avec succès !";
+        showToast(msg, 'success');
+        setTimeout(() => window.location.reload(), 1000);
+    });
+
+    // ── Restaurer le dernier panel actif ou charger celui par défaut ──────────
+    document.addEventListener('DOMContentLoaded', function() {
+        // Détecter un changement d'utilisateur ou de rôle pour vider le cache de navigation
+        const currentUserId = "{{ request.user.id }}";
+        const currentRole = "{{ active_role }}";
+        const savedUserId = sessionStorage.getItem('erpUserId');
+        const savedRole = sessionStorage.getItem('erpUserRole');
+        
+        if (savedUserId !== currentUserId || savedRole !== currentRole) {
+            sessionStorage.removeItem('activePanel');
+            sessionStorage.removeItem('activePanelTitle');
+            sessionStorage.removeItem('activePanelParams');
+            sessionStorage.setItem('erpUserId', currentUserId);
+            sessionStorage.setItem('erpUserRole', currentRole);
+        }
+
+        const savedPanel = sessionStorage.getItem('activePanel');
+        const savedTitle = sessionStorage.getItem('activePanelTitle');
+        const savedParams = sessionStorage.getItem('activePanelParams');
+        if (savedPanel) {
+            showPanel(savedPanel, savedTitle || 'Tableau de bord', savedParams || null);
+        } else {
+            // Initialisation avec le panel par défaut de l'utilisateur
+            showPanel('{{ default_panel }}', 'Tableau de bord', null);
+        }
+    });
+</script>
+
+<!-- Inactivity Warning Modal -->
+<div id="inactivityModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;">
+    <div class="card" style="width: 400px; padding: 25px; text-align: center; border-left: 4px solid var(--color-primary); background: var(--color-background-secondary); border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg);">
+        <i class="ti ti-clock" style="font-size: 48px; color: var(--color-primary); display: block; margin-bottom: 15px;"></i>
+        <h3 style="font-size: 18px; margin-bottom: 10px; color: var(--color-text-primary);">Session bientôt expirée</h3>
+        <p style="color: var(--color-text-secondary); margin-bottom: 20px; font-size: 13px;">Vous avez été inactif depuis un moment. Par sécurité, vous serez déconnecté dans <span id="inactivityCountdown" style="font-weight: bold; color: #E24B4A;">300</span> secondes.</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn btn-primary" onclick="resetInactivityTimer()">Rester connecté</button>
+            <a href="{% url 'logout' %}" class="btn btn-danger">Se déconnecter</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

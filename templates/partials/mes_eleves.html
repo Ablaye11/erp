@@ -1,0 +1,57 @@
+<div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+    {% for c in teacher_classes %}
+    <span class="chip {% if selected_class_id == c.id %}active-chip{% endif %}"
+          hx-get="{% url 'load_panel' 'mesEleves' %}?class_id={{ c.id }}"
+          hx-target="#mainContent"
+          style="cursor: pointer;">
+        {{ c.name }}
+    </span>
+    {% empty %}
+    <span class="chip active-chip">Aucune classe assignée</span>
+    {% endfor %}
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Élève</th>
+                <th>Moyenne générale</th>
+                <th>Présence</th>
+                <th>Tendance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in students %}
+            <tr>
+                <td style="font-weight: 600; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="ti ti-user" style="color: var(--color-primary);"></i> {{ s.name }}
+                </td>
+                <td>
+                    {% if s.avg %}
+                    <span data-style-color="{% if s.avg >= 15 %}#1D9E75{% elif s.avg >= 12 %}var(--color-primary){% elif s.avg >= 10 %}#854F0B{% else %}#E24B4A{% endif %}" style="font-weight: 600;">
+                        {{ s.avg }}/20
+                    </span>
+                    {% else %}
+                    <span style="color: var(--color-text-tertiary);">—</span>
+                    {% endif %}
+                </td>
+                <td><span class="badge bg">{{ s.presence }}</span></td>
+                <td data-style-color="{% if s.trend == '↗' %}#1D9E75{% elif s.trend == '↘' %}#E24B4A{% else %}var(--color-text-tertiary){% endif %}" style="font-size: 16px; font-weight: 600;">
+                    {{ s.trend }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">
+                    <div class="empty-state">Aucun élève trouvé dans cette classe.</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.querySelectorAll('[data-style-color]').forEach(el => el.style.color = el.getAttribute('data-style-color'));
+</script>

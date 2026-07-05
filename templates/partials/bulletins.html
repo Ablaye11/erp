@@ -1,0 +1,71 @@
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <form id="bulletinFilterForm" hx-get="{% url 'load_panel' 'bulletins' %}" hx-target="#mainContent" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <select name="term" style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);" hx-get="{% url 'load_panel' 'bulletins' %}" hx-target="#mainContent" hx-include="#bulletinFilterForm">
+            {% for t in term_range %}
+            <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>Trimestre {{ t }}</option>
+            {% endfor %}
+            <option value="0" {% if selected_term == 0 %}selected{% endif %}>Annuel</option>
+        </select>
+        
+        <select name="class_id" id="bulletinClassSelect" style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);" hx-get="{% url 'load_panel' 'bulletins' %}" hx-target="#mainContent" hx-include="#bulletinFilterForm">
+            <option value="">-- Toutes les classes --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        
+        {% if selected_class %}
+        <button type="button" class="btn btn-primary" style="margin-left: auto;" onclick="alert('Génération globale terminée avec succès.')"><i class="ti ti-file-export" aria-hidden="true"></i> Générer tous les bulletins</button>
+        <a href="{% url 'export_grades_excel' %}?class_id={{ selected_class.id }}&term={{ selected_term }}" class="btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <i class="ti ti-download" aria-hidden="true"></i> Excel
+        </a>
+        <button type="button" class="btn" onclick="alert('Les bulletins ont été envoyés à tous les parents par email.')"><i class="ti ti-mail" aria-hidden="true"></i> Envoyer aux parents</button>
+        {% endif %}
+    </form>
+</div>
+
+{% if selected_class %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Élève</th>
+                <th>Classe</th>
+                <th>Moyenne</th>
+                <th>Rang</th>
+                <th>Bulletin</th>
+                <th>Envoyé</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bul in bulletins %}
+            <tr style="cursor: pointer;" hx-get="{% url 'load_panel' 'bulletin' %}?student_id={{ bul.student.id }}&term={{ selected_term }}" hx-target="#mainContent" title="Cliquez pour voir le bulletin détaillé">
+                <td style="font-weight: 600; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="ti ti-user" style="color: var(--color-primary);"></i> {{ bul.name }}
+                </td>
+                <td>{{ selected_class.name }}</td>
+                <td>
+                    <span data-style-color="{% if bul.average >= 15 %}#1D9E75{% elif bul.average >= 12 %}var(--color-primary){% else %}#854F0B{% endif %}" style="font-weight: 600;">
+                        {{ bul.average }}/20
+                    </span>
+                </td>
+                <td><span class="badge bb">{{ bul.rank }}</span></td>
+                <td><span class="badge bg">{{ bul.status }}</span></td>
+                <td>
+                    <span class="badge {% if bul.sent == 'Oui' %}bt{% else %}ba{% endif %}">{{ bul.sent }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-file-text" aria-hidden="true" style="font-size: 32px;"></i>
+    Veuillez sélectionner une classe pour afficher les bulletins.
+</div>
+{% endif %}
+
+<script>
+    document.querySelectorAll('[data-style-color]').forEach(el => el.style.color = el.getAttribute('data-style-color'));
+</script>

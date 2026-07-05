@@ -1,0 +1,288 @@
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'load_panel' 'eleves' %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Élèves'">
+        <i class="ti ti-arrow-left"></i> Retour à la liste
+    </button>
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 14px;"
+            hx-get="{% url 'edit_student' student.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Modifier Profil Élève'">
+        <i class="ti ti-edit"></i> Modifier le profil
+    </button>
+    {% endif %}
+</div>
+
+<!-- Sélecteur de trimestre -->
+<div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; font-weight:600; color:var(--color-text-secondary);">Trimestre :</span>
+        <select name="term" style="font-size: 11px; padding: 4px 8px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--color-background-secondary); height: 28px;"
+                hx-get="{% url 'view_student_profile' student.id %}" hx-target="#mainContent" hx-include="this">
+            {% for t in term_range %}
+            <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>Trimestre {{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom:15px; background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background-secondary) 100%); border-left: 5px solid var(--color-primary); display:flex; align-items:center; gap:20px; padding:20px;">
+    <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: var(--color-background-secondary); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; border: 3px solid var(--color-primary); box-shadow: var(--shadow-md); flex-shrink: 0;">
+        <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            {% if student.user.avatar %}
+                <img src="{{ student.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}
+                {{ student.user.first_name|slice:":1" }}{{ student.user.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        {% if active_role == 'admin' or request.user == student.user %}
+        <form hx-post="{% url 'update_user_avatar' student.user.id %}"
+              hx-encoding="multipart/form-data"
+              hx-target="#mainContent"
+              hx-swap="innerHTML"
+              style="position: absolute; bottom: -2px; right: -2px; margin: 0; z-index: 10;">
+            {% csrf_token %}
+            <label style="width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-background-secondary); box-shadow: var(--shadow-sm); transition: transform 0.2s;" 
+                   title="Modifier la photo"
+                   onmouseover="this.style.transform='scale(1.1)'"
+                   onmouseout="this.style.transform='scale(1)'">
+                <i class="ti ti-camera" style="font-size: 13px;"></i>
+                <input type="file" name="avatar" accept="image/*" style="display: none;" onchange="htmx.trigger(this.form, 'submit')">
+            </label>
+        </form>
+        {% if student.user.avatar %}
+        <button type="button" 
+                hx-post="{% url 'update_user_avatar' student.user.id %}"
+                hx-vals='{"delete_avatar": "1"}'
+                hx-target="#mainContent"
+                hx-confirm="Supprimer la photo de profil ?"
+                style="position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; background: #A32D2D; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-background-secondary); cursor: pointer; padding: 0; z-index: 10;"
+                title="Supprimer la photo">
+            <i class="ti ti-x" style="font-size: 11px; font-weight: bold;"></i>
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div>
+        <h2 style="font-size: 18px; font-weight:700; color:var(--color-text-primary); margin-bottom:4px;">{{ student.user.get_full_name }}</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span class="badge bp" style="font-size: 11px; padding:3px 8px;">Élève</span>
+            <span class="badge bb" style="font-size: 11px; padding:3px 8px;">{{ student.class_room.name|default:"Classe non affectée" }}</span>
+            <span style="font-size: 11.5px; color: var(--color-text-secondary);">Matricule : <strong>{{ student.registration_number }}</strong></span>
+        </div>
+    </div>
+</div>
+
+<!-- Grid Details -->
+<div class="two-col">
+    <!-- Left Column: Personal info & Attendance -->
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <!-- Personal info -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-id"></i> Informations Personnelles
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Nom d'utilisateur :</span>
+                    <strong style="color:var(--color-text-primary);">@{{ student.user.username }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Date de naissance :</span>
+                    <strong style="color:var(--color-text-primary);">{{ student.birth_date|date:"d/m/Y"|default:"Non renseignée" }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Lieu de naissance :</span>
+                    <strong style="color:var(--color-text-primary);">{{ student.birth_place|default:"Non renseigné" }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Adresse Email :</span>
+                    <strong style="color:var(--color-text-primary);">{{ student.user.email|default:"Non renseigné" }}</strong>
+                </div>
+
+                    {% if student.parent %}
+                    <strong style="color:var(--color-primary); cursor:pointer; text-decoration:underline;"
+                            hx-get="{% url 'view_parent_profile' student.parent.id %}" hx-target="#mainContent"
+                            onclick="document.getElementById('topbarTitle').textContent='Profil Parent'">
+                        {{ student.parent.user.get_full_name }}
+                    </strong>
+                    {% else %}
+                    <strong style="color:var(--color-text-tertiary);">Aucun parent lié</strong>
+                    {% endif %}
+                </div>
+                {% if student.parent %}
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Téléphone parent :</span>
+                    <strong style="color:var(--color-text-primary);">{{ student.parent.phone }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Adresse :</span>
+                    <strong style="color:var(--color-text-primary); text-align:right;">{{ student.parent.address }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Attendance Stats -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-clipboard-check"></i> Assiduité & Présences
+            </h3>
+            
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px; background:var(--color-background-primary); padding:10px; border-radius:var(--border-radius-sm);">
+                {% if attendance_pct >= 90 %}
+                <div style="font-size: 24px; font-weight:700; color:#1D9E75; min-width:60px;">{{ attendance_pct }}%</div>
+                {% else %}
+                <div style="font-size: 24px; font-weight:700; color:#854F0B; min-width:60px;">{{ attendance_pct }}%</div>
+                {% endif %}
+                <div style="font-size:11px; color:var(--color-text-secondary);">
+                    Taux de présence globale basé sur l'appel journalier.
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <div style="background:#FAEBEB; color:#A32D2D; padding:8px; border-radius:var(--border-radius-sm); text-align:center;">
+                    <div style="font-size:16px; font-weight:700;">{{ absences_count }}</div>
+                    <div style="font-size:10px; font-weight:600;">Absences</div>
+                </div>
+                <div style="background:#FFF9EB; color:#854F0B; padding:8px; border-radius:var(--border-radius-sm); text-align:center;">
+                    <div style="font-size:16px; font-weight:700;">{{ retards_count }}</div>
+                    <div style="font-size:10px; font-weight:600;">Retards</div>
+                </div>
+            </div>
+
+            <h4 style="font-size:11.5px; font-weight:600; margin-bottom:8px; color:var(--color-text-secondary);">Historique récent</h4>
+            <div style="max-height:150px; overflow-y:auto; border:1px solid var(--color-border); border-radius:var(--border-radius-sm);">
+                <table style="width:100%; font-size:11px; border-collapse:collapse;">
+                    <thead style="background:var(--color-background-tertiary); position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:4px 6px; text-align:left; border-bottom:1px solid var(--color-border);">Date</th>
+                            <th style="padding:4px 6px; text-align:left; border-bottom:1px solid var(--color-border);">Période</th>
+                            <th style="padding:4px 6px; text-align:right; border-bottom:1px solid var(--color-border);">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attendances %}
+                        <tr style="border-bottom:1px solid var(--color-border);">
+                            <td style="padding:4px 6px;">{{ att.date|date:"d M Y" }}</td>
+                            <td style="padding:4px 6px; color:var(--color-text-tertiary);">{{ att.get_period_display }}</td>
+                            <td style="padding:4px 6px; text-align:right;">
+                                {% if att.status == 'PRESENT' %}
+                                <span class="badge bg" style="font-size:9px; padding:1px 4px;">Présent</span>
+                                {% elif att.status == 'ABSENT' %}
+                                <span class="badge br" style="font-size:9px; padding:1px 4px;">Absent</span>
+                                {% else %}
+                                <span class="badge ba" style="font-size:9px; padding:1px 4px;">Retard</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="padding:10px; text-align:center; color:var(--color-text-tertiary);">Aucun historique de présence.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Grades & Finances -->
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <!-- Grades & Average -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-report"></i> Résultats Académiques (Trimestre {{ selected_term }})
+            </h3>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:var(--color-primary-light); padding:10px 15px; border-radius:var(--border-radius-sm);">
+                <span style="font-size:12px; font-weight:600; color:var(--color-primary);">Moyenne générale pondérée :</span>
+                <strong style="font-size:16px; color:var(--color-primary);">
+                    {% if average %}{{ average }}/20{% else %}N/A{% endif %}
+                </strong>
+            </div>
+
+            <div style="max-height:220px; overflow-y:auto; border:1px solid var(--color-border); border-radius:var(--border-radius-sm);">
+                <table style="width:100%; font-size:11px; border-collapse:collapse;">
+                    <thead style="background:var(--color-background-tertiary); position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:6px; text-align:left; border-bottom:1px solid var(--color-border);">Matière</th>
+                            <th style="padding:6px; text-align:center; border-bottom:1px solid var(--color-border);">Coef</th>
+                            <th style="padding:6px; text-align:center; border-bottom:1px solid var(--color-border);">Note</th>
+                            <th style="padding:6px; text-align:right; border-bottom:1px solid var(--color-border);">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in grades %}
+                        <tr style="border-bottom:1px solid var(--color-border);">
+                            <td style="padding:6px; font-weight:600; color:var(--color-text-primary);">{{ item.subject_name }}</td>
+                            <td style="padding:6px; text-align:center; color:var(--color-text-secondary);">{{ item.coef }}</td>
+                            <td style="padding:6px; text-align:center; font-weight:700;">
+                                {% if item.score >= 15 %}
+                                <span style="color: #1D9E75;">{{ item.score }}/20</span>
+                                {% elif item.score >= 10 %}
+                                <span style="color: var(--color-primary);">{{ item.score }}/20</span>
+                                {% else %}
+                                <span style="color: #E24B4A;">{{ item.score }}/20</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:6px; text-align:right; font-weight:600; color:var(--color-text-primary);">{{ item.total }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="padding:15px; text-align:center; color:var(--color-text-tertiary);">Aucune note enregistrée pour ce trimestre.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Finances -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-coin"></i> Scolarité & Facturation
+            </h3>
+
+            <div style="max-height:220px; overflow-y:auto; border:1px solid var(--color-border); border-radius:var(--border-radius-sm);">
+                <table style="width:100%; font-size:11px; border-collapse:collapse;">
+                    <thead style="background:var(--color-background-tertiary); position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:6px; text-align:left; border-bottom:1px solid var(--color-border);">Trimestre / Frais</th>
+                            <th style="padding:6px; text-align:center; border-bottom:1px solid var(--color-border);">Montant Payé</th>
+                            <th style="padding:6px; text-align:right; border-bottom:1px solid var(--color-border);">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pay in payments %}
+                        <tr style="border-bottom:1px solid var(--color-border);">
+                            <td style="padding:6px;">
+                                <div style="font-weight:600; color:var(--color-text-primary);">{{ pay.tuition_fee.get_term_display }}</div>
+                                <div style="font-size:9.5px; color:var(--color-text-tertiary);">Limite : {{ pay.tuition_fee.due_date|date:"d/m/Y" }}</div>
+                            </td>
+                            <td style="padding:6px; text-align:center; font-weight:600; color:var(--color-text-secondary);">
+                                {{ pay.amount_paid|floatformat:0 }} / {{ pay.tuition_fee.amount|floatformat:0 }} FCFA
+                            </td>
+                            <td style="padding:6px; text-align:right;">
+                                {% if pay.status == 'PAID' %}
+                                <span class="badge bg" style="font-size:9.5px; padding:2px 6px;">Payé</span>
+                                {% elif pay.status == 'PARTIAL' %}
+                                <span class="badge ba" style="font-size:9.5px; padding:2px 6px;">Partiel</span>
+                                {% else %}
+                                <span class="badge br" style="font-size:9.5px; padding:2px 6px;">Impayé</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="padding:15px; text-align:center; color:var(--color-text-tertiary);">Aucune scolarité configurée pour cet élève.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

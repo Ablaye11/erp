@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin - {{ student_name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            background-color: #fff;
+            margin: 0;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+            background: #fff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .school-info h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 3px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .school-info p {
+            margin: 1px 0;
+            color: #64748b;
+            font-size: 10px;
+        }
+
+        .bulletin-title {
+            text-align: right;
+        }
+
+        .bulletin-title h2 {
+            font-size: 16px;
+            color: #0f172a;
+            margin: 0 0 3px 0;
+            font-weight: 700;
+        }
+
+        .bulletin-title p {
+            margin: 1px 0;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 15px;
+        }
+
+        .meta-item {
+            margin-bottom: 3px;
+        }
+
+        .meta-item strong {
+            color: #0f172a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: fixed;
+            font-size: 11px;
+        }
+
+        col.col-matiere  { width: 16%; }
+        col.col-coef     { width: 5%; }
+        col.col-devoirs  { width: 14%; }
+        col.col-moy-dev  { width: 8%; }
+        col.col-compo    { width: 8%; }
+        col.col-moy      { width: 8%; }
+        col.col-total    { width: 8%; }
+        col.col-avg-cls  { width: 8%; }
+        col.col-rang     { width: 7%; }
+        col.col-apprec   { width: 18%; }
+
+        th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 6px 5px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            word-break: break-word;
+        }
+
+        td {
+            padding: 5px 5px;
+            border-bottom: 1px solid #e2e8f0;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        td.apprec-cell {
+            font-style: italic;
+            color: #334155;
+            font-size: 9.5px;
+            white-space: normal;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        .score {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .summary-box {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            background: #f8fafc;
+            border: 2px solid #0f172a;
+            border-radius: 6px;
+            padding: 12px 15px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .summary-item .value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            padding-top: 10px;
+        }
+
+        .signature-block {
+            width: 200px;
+            text-align: center;
+        }
+
+        .signature-title {
+            font-weight: 600;
+            margin-bottom: 35px;
+            font-size: 11px;
+            color: #475569;
+            text-transform: uppercase;
+        }
+
+        .signature-line {
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 6px;
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 6mm;
+            }
+            body {
+                background: none;
+                padding: 0;
+                font-size: 10px;
+            }
+            .container {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+            table {
+                font-size: 9.5px;
+            }
+            th, td {
+                padding: 4px 3px;
+            }
+            .summary-box {
+                margin-top: 10px;
+                padding: 8px 12px;
+            }
+            .signatures {
+                margin-top: 15px;
+            }
+            .signature-title {
+                margin-bottom: 25px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="no-print" style="max-width: 800px; margin: 20px auto 10px auto; display: flex; gap: 8px; justify-content: flex-end; padding: 0 10px;">
+    <button onclick="downloadPDF()" style="background: #1D5FA5; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        💾 Télécharger PDF
+    </button>
+    <button onclick="window.print()" style="background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        🖨️ Imprimer
+    </button>
+    <button onclick="window.close()" style="background: #e2e8f0; color: #334155; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+        Fermer
+    </button>
+</div>
+
+<div class="container">
+
+    <!-- Letterhead -->
+    <div class="header">
+        <div class="school-info">
+            <h1>{{ school_name }}</h1>
+            <p>{{ school_city }}</p>
+            <p>Email: {{ school_email }}</p>
+            <p>Directeur: {{ school_director }}</p>
+        </div>
+        <div class="bulletin-title">
+            <h2>BULLETIN DE NOTES</h2>
+            <p>Année Scolaire: <strong>{{ school_year }}</strong></p>
+            <p>Période: <strong>{% if term == 0 %}Annuel{% else %}Trimestre {{ term }}{% endif %}</strong></p>
+        </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="meta-grid">
+        <div>
+            <div class="meta-item">Élève: <strong>{{ student_name }}</strong></div>
+            <div class="meta-item">Classe: <strong>{{ class_name }}</strong></div>
+            <div class="meta-item">Identifiant: <strong>{{ student.registration_number|default:"N/A" }}</strong></div>
+        </div>
+        <div class="meta-item" style="text-align: right;">
+            <div>Date d'édition: <strong>{{ today|date:"d/m/Y" }}</strong></div>
+            <div>Statut: <strong>Officiel</strong></div>
+        </div>
+    </div>
+
+    <!-- Grades Table -->
+    <table>
+        <colgroup>
+            <col class="col-matiere">
+            <col class="col-coef">
+            {% if term != 0 %}
+            <col class="col-devoirs">
+            <col class="col-moy-dev">
+            <col class="col-compo">
+            {% endif %}
+            <col class="col-moy">
+            <col class="col-total">
+            <col class="col-avg-cls">
+            <col class="col-rang">
+            <col class="col-apprec">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Matière</th>
+                <th style="text-align: center;">Coef</th>
+                {% if term != 0 %}
+                <th style="text-align: center;">Notes</th>
+                <th style="text-align: center;">Moy. Dev.</th>
+                <th style="text-align: center;">Compo</th>
+                {% endif %}
+                <th style="text-align: center;">Moy./20</th>
+                <th style="text-align: center;">Total</th>
+                <th style="text-align: center;">Cl. Moy.</th>
+                <th style="text-align: center;">Rang</th>
+                <th>Appréciations</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in grades %}
+            <tr>
+                <td style="font-weight: 600; color: #0f172a;">{{ g.subject }}</td>
+                <td style="text-align: center; color: #475569;">{{ g.coef }}</td>
+                {% if term != 0 %}
+                <td style="text-align: center; color: #475569;">{{ g.devoirs_str|default:"—" }}</td>
+                <td style="text-align: center; color: #475569;">{% if g.moy_devoirs %}{{ g.moy_devoirs }}{% else %}—{% endif %}</td>
+                <td style="text-align: center; color: #475569;">{% if g.compo %}{{ g.compo }}{% else %}—{% endif %}</td>
+                {% endif %}
+                <td style="text-align: center; font-weight: 700;" class="score">{{ g.score }}</td>
+                <td style="text-align: center; font-weight: 600; color: #0f172a;">{{ g.total_points }}</td>
+                <td style="text-align: center; color: #64748b;">{{ g.class_avg }}</td>
+                <td style="text-align: center; font-weight: 600; color: #1D5FA5;">{{ g.rank }}</td>
+                <td class="apprec-cell">{{ g.remark|default:"Bon travail" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Summary Box -->
+    <div class="summary-box">
+        <div class="summary-item">
+            <span class="label">Moyenne Générale</span>
+            <span class="value">{{ average }} / 20</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">Rang</span>
+            <span class="value" style="font-size: 16px; font-weight: 700; color: #0f172a;">{{ rank }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">Décision du Conseil</span>
+            <span class="value" style="font-size: 14px; margin-top: 2px; font-weight: 600;">
+                {% if average >= 10 %}
+                    Admis(e)
+                {% else %}
+                    Ajourné(e)
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures">
+        <div class="signature-block">
+            <div class="signature-title">Le Directeur</div>
+            <div style="height: 45px;"></div>
+            <div class="signature-line">{{ school_director }}</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-title">Les Parents</div>
+            <div style="height: 45px;"></div>
+            <div class="signature-line">Signature</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadPDF() {
+        const element = document.querySelector('.container');
+        const opt = {
+            margin:       [8, 6, 8, 6],
+            filename:     'Bulletin_{{ student_name }}_{{ school_year }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        return html2pdf().set(opt).from(element).save();
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('download')) {
+            downloadPDF().then(() => {
+                setTimeout(function() {
+                    window.close();
+                }, 1500);
+            });
+        } else if (urlParams.has('print')) {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        }
+    }
+</script>
+</body>
+</html>

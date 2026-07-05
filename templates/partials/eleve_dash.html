@@ -1,0 +1,66 @@
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Moyenne générale</div>
+        <div class="stat-value">{{ average }}</div>
+        <div class="stat-trend trend-up"><i class="ti ti-trending-up" aria-hidden="true"></i> +0.4 vs T1</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Rang de classe</div>
+        <div class="stat-value">{{ rank }}</div>
+        <div class="stat-trend trend-neu">Trimestre 2</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Assiduité</div>
+        <div class="stat-value">{{ attendance_rate }}</div>
+        <div class="stat-trend trend-up">Excellent</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Paiements</div>
+        <div class="stat-value" style="font-size: 16px;">{{ payment_status }}</div>
+        <div class="stat-trend trend-up">T1 + T2 réglés</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Mes dernières notes -->
+    <div class="card">
+        <div class="section-title">Mes dernières notes</div>
+        {% for grade in latest_grades %}
+        <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>{{ grade.subject }}</span>
+                <span data-style-color="{% if grade.score >= 15 %}#1D9E75{% else %}var(--color-primary){% endif %}" style="font-weight: 600;">{{ grade.score }}/20</span>
+            </div>
+            <div class="note-bar">
+                <div class="note-fill" data-style-width="{{ grade.pct }}%" data-style-background="{% if grade.score >= 15 %}#1D9E75{% else %}var(--color-primary){% endif %}"></div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="font-size: 11.5px; color: var(--color-text-secondary); text-align: center; padding: 20px 0;">
+            Aucune note disponible pour le trimestre actif.
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Cours d'aujourd'hui -->
+    <div class="card">
+        <div class="section-title">Cours d'aujourd'hui</div>
+        {% for course in today_courses %}
+        <div style="padding: 8px 0; border-bottom: 1px solid var(--color-border-tertiary);">
+            <div style="font-size: 10px; color: var(--color-text-tertiary);">{{ course.time }}</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--color-text-primary); margin-top: 1px;">{{ course.subject }}</div>
+            <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">{{ course.detail }}</div>
+        </div>
+        {% empty %}
+        <div style="font-size: 11.5px; color: var(--color-text-secondary); text-align: center; padding: 20px 0;">
+            Aucun cours planifié pour aujourd'hui.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('[data-style-width]').forEach(el => el.style.width = el.getAttribute('data-style-width'));
+    document.querySelectorAll('[data-style-color]').forEach(el => el.style.color = el.getAttribute('data-style-color'));
+    document.querySelectorAll('[data-style-background]').forEach(el => el.style.background = el.getAttribute('data-style-background'));
+</script>

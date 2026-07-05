@@ -1,0 +1,105 @@
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'load_panel' 'personnel' %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Personnel admin.'">
+        <i class="ti ti-arrow-left"></i> Retour à la liste
+    </button>
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 14px;"
+            hx-get="{% url 'edit_staff' staff.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Modifier Profil Personnel'">
+        <i class="ti ti-edit"></i> Modifier le profil
+    </button>
+    {% endif %}
+</div>
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom:15px; background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background-secondary) 100%); border-left: 5px solid var(--color-primary); display:flex; align-items:center; gap:20px; padding:20px;">
+    <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: var(--color-background-secondary); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; border: 3px solid var(--color-primary); box-shadow: var(--shadow-md); flex-shrink: 0;">
+        <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            {% if staff.user.avatar %}
+                <img src="{{ staff.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}
+                {{ staff.user.first_name|slice:":1" }}{{ staff.user.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        {% if active_role == 'admin' or request.user == staff.user %}
+        <form hx-post="{% url 'update_user_avatar' staff.user.id %}"
+              hx-encoding="multipart/form-data"
+              hx-target="#mainContent"
+              hx-swap="innerHTML"
+              style="position: absolute; bottom: -2px; right: -2px; margin: 0; z-index: 10;">
+            {% csrf_token %}
+            <label style="width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-background-secondary); box-shadow: var(--shadow-sm); transition: transform 0.2s;" 
+                   title="Modifier la photo"
+                   onmouseover="this.style.transform='scale(1.1)'"
+                   onmouseout="this.style.transform='scale(1)'">
+                <i class="ti ti-camera" style="font-size: 13px;"></i>
+                <input type="file" name="avatar" accept="image/*" style="display: none;" onchange="htmx.trigger(this.form, 'submit')">
+            </label>
+        </form>
+        {% if staff.user.avatar %}
+        <button type="button" 
+                hx-post="{% url 'update_user_avatar' staff.user.id %}"
+                hx-vals='{"delete_avatar": "1"}'
+                hx-target="#mainContent"
+                hx-confirm="Supprimer la photo de profil ?"
+                style="position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; background: #A32D2D; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-background-secondary); cursor: pointer; padding: 0; z-index: 10;"
+                title="Supprimer la photo">
+            <i class="ti ti-x" style="font-size: 11px; font-weight: bold;"></i>
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div>
+        <h2 style="font-size: 18px; font-weight:700; color:var(--color-text-primary); margin-bottom:4px;">{{ staff.user.get_full_name }}</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span class="badge bp" style="font-size: 11px; padding:3px 8px;">Administratif</span>
+            <span class="badge bb" style="font-size: 11px; padding:3px 8px;">{{ staff.position }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+        <i class="ti ti-id"></i> Fiche administrative du personnel
+    </h3>
+    <div style="display:flex; flex-direction:column; gap:10px; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Nom d'utilisateur :</span>
+            <strong style="color:var(--color-text-primary);">@{{ staff.user.username }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Poste / Fonction :</span>
+            <strong style="color:var(--color-text-primary);">{{ staff.position }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Département :</span>
+            <strong style="color:var(--color-text-primary);">
+                {% if staff.position == 'Directeur' %}Direction
+                {% elif staff.position == 'Secrétaire' %}Administration
+                {% elif staff.position == 'Comptable' %}Finances
+                {% else %}Général
+                {% endif %}
+            </strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Adresse Email :</span>
+            <strong style="color:var(--color-text-primary);">{{ staff.user.email|default:"Non renseigné" }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Numéro de téléphone :</span>
+            <strong style="color:var(--color-text-primary);">
+                {% if staff.position == 'Directeur' %}77 000 0001
+                {% elif staff.position == 'Secrétaire' %}77 000 0002
+                {% elif staff.position == 'Comptable' %}77 000 0003
+                {% else %}77 000 0004
+                {% endif %}
+            </strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
+            <span style="color:var(--color-text-secondary);">Statut d'activité :</span>
+            <strong class="badge bg" style="font-size:10.5px; padding:2px 6px;">Actif</strong>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,430 @@
+<!-- Settings avec sauvegarde réelle en DB via HTMX -->
+<div id="settingsResult"></div>
+
+<div class="two-col">
+    <!-- Profil Personnel (Disponible pour TOUS les utilisateurs) -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-user" aria-hidden="true"></i> Mon Profil
+        </div>
+        <form hx-post="{% url 'save_profile' %}" 
+              hx-encoding="multipart/form-data"
+              hx-target="#settingsResult" 
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            
+            <!-- Affichage de l'avatar actuel -->
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                <div style="position: relative; width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; flex-shrink: 0; overflow: hidden; border: 2px solid var(--color-border);">
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <span style="font-size: 20px; font-weight: 700;">
+                            {{ request.user.first_name|slice:":1" }}{% if request.user.last_name %}{{ request.user.last_name|slice:":1" }}{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 600; color: var(--color-text-primary);">{{ request.user.get_full_name|default:request.user.username }}</div>
+                    <div style="font-size: 10px; color: var(--color-text-tertiary); margin-bottom: 6px;">@{{ request.user.username }} • {{ active_role|capfirst }}</div>
+                    {% if request.user.avatar %}
+                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #A32D2D; cursor: pointer; font-weight: 600;">
+                            <input type="checkbox" name="delete_avatar" value="1" style="margin: 0;"> Supprimer la photo
+                        </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Upload input -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Nouvelle photo de profil</div>
+                <input type="file" name="avatar" accept="image/*" style="width: 100%; font-size: 11px; padding: 4px 8px; border: 1px dashed var(--color-border); border-radius: var(--border-radius-sm);">
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Prénom</div>
+                <input type="text" name="first_name" value="{{ request.user.first_name }}" style="width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Nom</div>
+                <input type="text" name="last_name" value="{{ request.user.last_name }}" style="width: 100%;">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Adresse e-mail</div>
+                <input type="email" name="email" value="{{ request.user.email }}" style="width: 100%;">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="ti ti-device-floppy" aria-hidden="true"></i> Mettre à jour mon profil
+            </button>
+        </form>
+    </div>
+
+    <!-- Sécurité (Disponible pour TOUS les utilisateurs) -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-lock" aria-hidden="true"></i> Sécurité & Mot de passe
+        </div>
+        <form hx-post="{% url 'change_password' %}" 
+              hx-target="#settingsResult" 
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Mot de passe actuel</div>
+                <input type="password" name="current_password" required placeholder="••••••••" style="width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background-secondary); color: var(--color-text-primary);">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Nouveau mot de passe</div>
+                <input type="password" name="new_password" required placeholder="••••••••" style="width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background-secondary); color: var(--color-text-primary);">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Confirmer le nouveau mot de passe</div>
+                <input type="password" name="confirm_password" required placeholder="••••••••" style="width: 100%; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background-secondary); color: var(--color-text-primary);">
+            </div>
+            <button type="submit" class="btn btn-primary" style="background:var(--color-primary);">
+                <i class="ti ti-key" aria-hidden="true"></i> Modifier le mot de passe
+            </button>
+        </form>
+    </div>
+
+    {% if active_role == 'admin' %}
+    <!-- Établissement -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-building" aria-hidden="true"></i> Établissement
+        </div>
+        <form hx-post="{% url 'save_settings' %}" 
+              hx-target="#settingsResult" 
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Nom de l'établissement</div>
+                <input type="text" name="school_name" value="{{ school_name }}" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Ville</div>
+                <input type="text" name="school_city" value="{{ school_city }}" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Année scolaire</div>
+                <input type="text" name="school_year" value="{{ school_year }}" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Directeur</div>
+                <input type="text" name="school_director" value="{{ school_director }}" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Email de contact</div>
+                <input type="email" name="school_email" value="{{ school_email }}" style="width: 100%;">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+{% if active_role == 'admin' %}
+<div class="two-col" style="margin-top: 15px;">
+    <!-- Configuration académique -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-settings" aria-hidden="true"></i> Configuration académique
+        </div>
+        <form hx-post="{% url 'save_settings' %}" 
+              hx-target="#settingsResult" 
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <!-- Champs cachés pour conserver les infos établissement -->
+            <input type="hidden" name="school_name" value="{{ school_name }}">
+            <input type="hidden" name="school_city" value="{{ school_city }}">
+            <input type="hidden" name="school_year" value="{{ school_year }}">
+            <input type="hidden" name="school_director" value="{{ school_director }}">
+            <input type="hidden" name="school_email" value="{{ school_email }}">
+            
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Frais de scolarité (FCFA/trimestre)</div>
+                <input type="number" name="tuition_fee" value="{{ tuition_fee }}" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Nombre de trimestres</div>
+                <input type="number" name="nb_trimestres" value="{{ nb_trimestres }}" min="1" max="4" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight:500;">Note de passage /20</div>
+                <input type="number" step="0.5" name="passing_score" value="{{ passing_score }}" min="0" max="20" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                    <input type="checkbox" name="sms_alerts" {% if sms_alerts %}checked{% endif %}>
+                    Activer les alertes SMS aux parents
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer
+            </button>
+        </form>
+    </div>
+
+    <!-- Gestion des Classes -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-school" aria-hidden="true"></i> Classes de l'établissement
+        </div>
+        
+        <!-- Liste des classes -->
+        <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); margin-bottom: 15px; background: var(--color-background-secondary);">
+            <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                <thead style="background: var(--color-background-tertiary); position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border);">Classe</th>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border);">Niveau</th>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border);">Salle</th>
+                        <th style="padding: 6px; text-align: center; border-bottom: 1px solid var(--color-border);">Trim.</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid var(--color-border);">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cls in classes_list %}
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 6px; font-weight: 600; color: var(--color-text-primary);">{{ cls.name }}</td>
+                        <td style="padding: 6px; color: var(--color-text-secondary);">{{ cls.level }}</td>
+                        <td style="padding: 6px; color: var(--color-text-tertiary);">{{ cls.classroom|default:"—" }}</td>
+                        <td style="padding: 6px; text-align:center;">
+                            <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;background:var(--color-primary-light);color:var(--color-primary);">{{ cls.nb_trimestres }}T</span>
+                        </td>
+                        <td style="padding: 6px; text-align: right; display: flex; gap: 4px; justify-content: flex-end;">
+                            <button class="btn" style="padding: 2px 4px; font-size: 10px; background: #E6F1FB; color: #185FA5; border: 1px solid #BEE3F8;"
+                                    hx-get="{% url 'edit_class_row' cls.id %}"
+                                    hx-target="closest tr"
+                                    hx-swap="outerHTML"
+                                    title="Modifier">
+                                <i class="ti ti-edit"></i>
+                            </button>
+                            <button class="btn" style="padding: 2px 4px; font-size: 10px; background: #FAEBEB; color: #A32D2D; border: 1px solid #F8D7DA;"
+                                    hx-get="{% url 'delete_class' cls.id %}"
+                                    hx-target="#mainContent"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="Êtes-vous sûr de vouloir supprimer la classe {{ cls.name }} ? Cela supprimera l'affectation de ses élèves."
+                                    title="Supprimer">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: 15px; text-align: center; color: var(--color-text-tertiary);">Aucune classe configurée.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="border-top: 1px dashed var(--color-border); padding-top: 12px;">
+            <div style="font-size: 11.5px; font-weight: 600; margin-bottom: 8px; color: var(--color-text-primary);">Ajouter une classe</div>
+            <form hx-post="{% url 'add_class' %}" hx-target="#mainContent" hx-swap="innerHTML">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 8px;">
+                    <div>
+                        <input type="text" name="name" placeholder="Nom (ex: 6ème A)" required style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                    </div>
+                    <div>
+                        <input type="text" name="level" placeholder="Niveau (ex: 6ème)" required style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                    </div>
+                    <div>
+                        <input type="text" name="classroom" placeholder="Salle (ex: A01)" style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                    </div>
+                    <div>
+                        <select name="nb_trimestres" style="width: 100%; font-size: 11px; padding: 4px 6px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--color-background-secondary);" title="Nombre de trimestres">
+                            <option value="3">3 trimestres</option>
+                            <option value="2">2 trimestres</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ti ti-plus"></i> Créer la classe
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="two-col" style="margin-top: 15px;">
+    <!-- Gestion des Matières -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-book" aria-hidden="true"></i> Matières d'enseignement
+        </div>
+        
+        <!-- Liste des matières -->
+        <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); margin-bottom: 15px; background: var(--color-background-secondary);">
+            <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                <thead style="background: var(--color-background-tertiary); position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border);">Matière</th>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid var(--color-border);">Code</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid var(--color-border);">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subjects_list %}
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 6px; font-weight: 600; color: var(--color-text-primary);">{{ sub.name }}</td>
+                        <td style="padding: 6px; text-transform: uppercase; color: var(--color-text-secondary);">{{ sub.code }}</td>
+                        <td style="padding: 6px; text-align: right;">
+                            <button class="btn" style="padding: 2px 4px; font-size: 10px; background: #FAEBEB; color: #A32D2D; border: 1px solid #F8D7DA;"
+                                    hx-get="{% url 'delete_subject' sub.id %}"
+                                    hx-target="#mainContent"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="Êtes-vous sûr de vouloir supprimer la matière {{ sub.name }} ?">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding: 15px; text-align: center; color: var(--color-text-tertiary);">Aucune matière configurée.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Formulaire ajout matière -->
+        <div style="border-top: 1px dashed var(--color-border); padding-top: 12px;">
+            <div style="font-size: 11.5px; font-weight: 600; margin-bottom: 8px; color: var(--color-text-primary);">Ajouter une matière</div>
+            <form hx-post="{% url 'add_subject' %}" hx-target="#mainContent" hx-swap="innerHTML">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 8px;">
+                    <div>
+                        <input type="text" name="name" placeholder="Nom (ex: Mathématiques)" required style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                    </div>
+                    <div>
+                        <input type="text" name="code" placeholder="Code (ex: MATH)" required style="width: 100%; font-size: 11px; padding: 4px 6px;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ti ti-plus"></i> Créer la matière
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Affectation des matières aux classes -->
+    <div class="card">
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 15px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-git-merge" aria-hidden="true"></i> Affectation des matières aux classes
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight:500;">Sélectionner une classe</div>
+            <select id="assign-class-select" name="class_id" style="width: 100%; padding: 6px; font-size: 11.5px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--color-background-primary); color: var(--color-text-primary);"
+                    hx-get="{% url 'load_class_subjects' %}"
+                    hx-trigger="change"
+                    hx-target="#class-subjects-container">
+                {% for cls in classes_list %}
+                    <option value="{{ cls.id }}">{{ cls.name }}</option>
+                {% empty %}
+                    <option value="">Aucune classe disponible</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <form hx-post="{% url 'save_class_subjects' %}" hx-target="#settingsResult" hx-swap="innerHTML">
+            {% csrf_token %}
+            
+            <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight:500;">Matières à enseigner</div>
+            <!-- Conteneur chargé dynamiquement par HTMX -->
+            <div id="class-subjects-container"
+                 hx-get="{% url 'load_class_subjects' %}"
+                 hx-trigger="load"
+                 hx-target="this">
+                <div style="padding: 10px; text-align: center; color: var(--color-text-tertiary); font-size: 11px;">Chargement...</div>
+            </div>
+            
+            <div style="margin-top: 15px; border-top: 1px dashed var(--color-border); padding-top: 12px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ti ti-device-floppy"></i> Enregistrer l'affectation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+{% if active_role == 'admin' %}
+<!-- CARTE PROMOTION FIN D'ANNÉE -->
+<div style="margin-top: 15px;">
+  <div class="card" style="border-left: 4px solid #f59e0b; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#f97316);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="ti ti-award" style="color:white;font-size:20px;"></i>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--color-text-primary);">Gestion de fin d'année</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">Promouvoir les élèves ou confirmer les redoublements — Passer à l'année suivante</div>
+      </div>
+    </div>
+    <button class="btn" style="padding:8px 18px;font-size:13px;font-weight:600;background:linear-gradient(135deg,#f59e0b,#f97316);color:white;border:none;border-radius:var(--border-radius-sm);display:flex;align-items:center;gap:8px;"
+            hx-get="{% url 'load_promotion_students' %}"
+            hx-target="#mainContent"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('topbarTitle').textContent='Fin d\'année'">
+      <i class="ti ti-arrow-right"></i> Ouvrir
+    </button>
+  </div>
+</div>
+
+<!-- CARTE MAINTENANCE DE LA BASE DE DONNÉES -->
+<div class="card" style="border-left: 4px solid #A32D2D; margin-top: 15px; padding: 20px;">
+    <div style="font-size: 13.5px; font-weight: 700; margin-bottom: 12px; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">
+        <i class="ti ti-database" aria-hidden="true" style="color:#A32D2D; font-size:18px;"></i> Maintenance & Sauvegarde
+    </div>
+    
+    <div style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 18px; line-height: 1.5;">
+        Gérez l'état général de la base de données SQLite : réinitialisez tous les enregistrements (votre compte administrateur courant sera conservé), rechargez les données fictives de démonstration, ou créez/restaurez des points de sauvegarde pour récupérer des données effacées par erreur.
+    </div>
+    
+    <!-- Actions principales -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 1px dashed var(--color-border); padding-bottom: 15px;">
+        <button class="btn" 
+                hx-post="{% url 'db_reset' %}" 
+                hx-confirm="⚠️ Attention : Êtes-vous ABSOLUMENT sûr de vouloir REMETTRE À ZÉRO toute la base de données ? Tous les élèves, notes, cours et paiements seront définitivement supprimés !"
+                hx-target="#settingsResult"
+                style="background: #A32D2D; color: white; border: none; padding: 6px 14px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border-radius: var(--border-radius-sm);">
+            <i class="ti ti-refresh-alert"></i> Remettre à zéro
+        </button>
+        
+        <button class="btn" 
+                hx-post="{% url 'db_restore_demo' %}" 
+                hx-confirm="⚠️ Attention : Cela va réinitialiser et écraser la base de données actuelle pour restaurer les comptes et données d'exemples de démonstration. Continuer ?"
+                hx-target="#settingsResult"
+                style="border: 1px solid var(--color-primary); color: var(--color-primary); background: transparent; padding: 6px 14px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border-radius: var(--border-radius-sm);">
+            <i class="ti ti-rocket"></i> Charger les données démo
+        </button>
+        
+        <button class="btn btn-primary" 
+                hx-post="{% url 'db_create_backup' %}" 
+                hx-target="#settingsResult"
+                style="margin-left: auto; padding: 6px 14px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border-radius: var(--border-radius-sm);">
+            <i class="ti ti-device-floppy"></i> Créer une sauvegarde
+        </button>
+    </div>
+    
+    <!-- Liste des sauvegardes disponibles -->
+    <div style="font-size: 12.5px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-files" style="font-size: 15px; color: var(--color-text-secondary);"></i> Points de restauration disponibles
+    </div>
+    
+    <div id="backup-list-container" 
+         hx-get="{% url 'db_list_backups' %}" 
+         hx-trigger="load, backupListChanged from:body" 
+         hx-target="this">
+        <div style="font-size: 11px; text-align: center; color: var(--color-text-tertiary); padding: 15px;">Chargement des sauvegardes...</div>
+    </div>
+</div>
+{% endif %}

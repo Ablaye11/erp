@@ -1,0 +1,142 @@
+<div style="display: flex; gap: 8px; margin-bottom: 15px;">
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" onclick="togglePaymentForm()"><i class="ti ti-plus" aria-hidden="true"></i> Enregistrer un paiement</button>
+    {% endif %}
+</div>
+
+<!-- Form to Record Payment (hidden by default) -->
+<div id="recordPaymentFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-coin" aria-hidden="true"></i> Enregistrer un paiement de scolarité
+    </h3>
+    <form hx-post="{% url 'record_payment' %}" hx-target="#recordPaymentResult" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Élève *</label>
+                <select name="student_id" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    <option value="" disabled selected>Choisir un élève...</option>
+                    {% for student in students_list %}
+                        <option value="{{ student.id }}">{{ student.user.get_full_name }} ({{ student.class_room.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Montant (FCFA) *</label>
+                <input type="number" name="amount" min="1" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Trimestre *</label>
+                <select name="term" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    <option value="1">Trimestre 1</option>
+                    <option value="2" selected>Trimestre 2</option>
+                    <option value="3">Trimestre 3</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Mode de paiement *</label>
+                <select name="payment_method" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    <option value="CASH" selected>Espèces</option>
+                    <option value="MOBILE_MONEY">Mobile Money</option>
+                    <option value="BANK_TRANSFER">Virement Bancaire</option>
+                    <option value="CARD">Carte Bancaire</option>
+                </select>
+            </div>
+        </div>
+        <div id="recordPaymentResult"></div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Valider le paiement</button>
+            <button type="button" class="btn" onclick="togglePaymentForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Encaissé (mois)</div>
+        <div class="stat-value" style="font-size: 18px;">{{ total_collected }} FCFA</div>
+        <div class="stat-trend trend-up">Taux de scolarité encaissés</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">En attente</div>
+        <div class="stat-value" style="font-size: 18px; color: #E24B4A;">{{ pending_amount }} FCFA</div>
+        <div class="stat-trend trend-down">{{ pending_count }} familles concernées</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Taux de recouvrement</div>
+        <div class="stat-value">{{ recovery_pct }}%</div>
+        <div class="stat-trend trend-up">Ce trimestre</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Frais de scolarité</div>
+        <div class="stat-value" style="font-size: 18px;">{{ tuition_fee_amount }} FCFA</div>
+        <div class="stat-trend trend-neu">Moyenne configurée</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Derniers paiements -->
+    <div class="card">
+        <div class="section-title">Derniers paiements</div>
+        <div style="display: flex; flex-direction: column;">
+            {% for pay in recent_payments %}
+            <div class="paiement-row">
+                <div>
+                    <div style="font-weight: 600; color: var(--color-text-primary);">{{ pay.student.user.get_full_name }}</div>
+                    <span class="badge bg" style="margin-top: 3px; font-size: 9px;">{{ pay.tuition_fee.get_term_display }}</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; font-size: 13px; color: #1D9E75;">+{{ pay.amount_paid|floatformat:0 }} FCFA</div>
+                    <div style="font-size: 9.5px; color: var(--color-text-tertiary); margin-top: 2px;">{{ pay.paid_at|date:"d M H:i" }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding: 20px 0; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">
+                <i class="ti ti-receipt-off" style="font-size: 24px; display: block; margin-bottom: 6px;"></i>
+                Aucun paiement récent enregistré.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Impayés prioritaires -->
+    <div class="card">
+        <div class="section-title">Impayés prioritaires</div>
+        <div style="display: flex; flex-direction: column;">
+            {% for pay in unpaid_priorities %}
+            <div class="paiement-row">
+                <div>
+                    <div style="font-weight: 600; color: var(--color-text-primary);">{{ pay.student.user.get_full_name }}</div>
+                    <span class="badge br" style="margin-top: 3px; font-size: 9px;">Dû le {{ pay.tuition_fee.due_date|date:"d M Y" }}</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; font-size: 13px; color: #A32D2D;">{{ pay.tuition_fee.amount|floatformat:0 }} FCFA</div>
+                    <div style="font-size: 10px; color: var(--color-primary); cursor: pointer; margin-top: 3px; font-weight: 500;"
+                         hx-get="{% url 'load_panel' 'messagerie' %}?chat_user_id={{ pay.student.parent.user.id }}" hx-target="#mainContent" onclick="document.getElementById('topbarTitle').textContent='Messagerie'">
+                         Envoyer rappel →
+                     </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding: 20px 0; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">
+                <i class="ti ti-circle-check" style="font-size: 24px; display: block; margin-bottom: 6px; color: #1D9E75;"></i>
+                Aucun impayé à signaler.
+            </div>
+            {% endfor %}
+        </div>
+        <button class="btn btn-primary" style="margin-top: 15px; width: 100%; justify-content: center;"
+                hx-post="{% url 'send_unpaid_reminders' %}"
+                hx-target="#rappelResult"
+                hx-swap="innerHTML">
+            <i class="ti ti-mail" aria-hidden="true"></i> Rappel groupé
+        </button>
+        <div id="rappelResult"></div>
+    </div>
+</div>
+
+<script>
+    function togglePaymentForm() {
+        const form = document.getElementById('recordPaymentFormContainer');
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+</script>

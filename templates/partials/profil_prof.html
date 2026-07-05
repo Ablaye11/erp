@@ -1,0 +1,187 @@
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'load_panel' 'profs' %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Enseignants'">
+        <i class="ti ti-arrow-left"></i> Retour à la liste
+    </button>
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 14px;"
+            hx-get="{% url 'edit_teacher' teacher.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Modifier Profil Enseignant'">
+        <i class="ti ti-edit"></i> Modifier le profil
+    </button>
+    {% endif %}
+</div>
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom:15px; background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background-secondary) 100%); border-left: 5px solid var(--color-primary); display:flex; align-items:center; gap:20px; padding:20px;">
+    <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: var(--color-background-secondary); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; border: 3px solid var(--color-primary); box-shadow: var(--shadow-md); flex-shrink: 0;">
+        <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            {% if teacher.user.avatar %}
+                <img src="{{ teacher.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}
+                {{ teacher.user.first_name|slice:":1" }}{{ teacher.user.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        {% if active_role == 'admin' or request.user == teacher.user %}
+        <form hx-post="{% url 'update_user_avatar' teacher.user.id %}"
+              hx-encoding="multipart/form-data"
+              hx-target="#mainContent"
+              hx-swap="innerHTML"
+              style="position: absolute; bottom: -2px; right: -2px; margin: 0; z-index: 10;">
+            {% csrf_token %}
+            <label style="width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-background-secondary); box-shadow: var(--shadow-sm); transition: transform 0.2s;" 
+                   title="Modifier la photo"
+                   onmouseover="this.style.transform='scale(1.1)'"
+                   onmouseout="this.style.transform='scale(1)'">
+                <i class="ti ti-camera" style="font-size: 13px;"></i>
+                <input type="file" name="avatar" accept="image/*" style="display: none;" onchange="htmx.trigger(this.form, 'submit')">
+            </label>
+        </form>
+        {% if teacher.user.avatar %}
+        <button type="button" 
+                hx-post="{% url 'update_user_avatar' teacher.user.id %}"
+                hx-vals='{"delete_avatar": "1"}'
+                hx-target="#mainContent"
+                hx-confirm="Supprimer la photo de profil ?"
+                style="position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; background: #A32D2D; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-background-secondary); cursor: pointer; padding: 0; z-index: 10;"
+                title="Supprimer la photo">
+            <i class="ti ti-x" style="font-size: 11px; font-weight: bold;"></i>
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div>
+        <h2 style="font-size: 18px; font-weight:700; color:var(--color-text-primary); margin-bottom:4px;">{{ teacher.user.get_full_name }}</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span class="badge bp" style="font-size: 11px; padding:3px 8px;">Enseignant</span>
+            <span style="font-size: 11.5px; color: var(--color-text-secondary);">Matières : <strong>
+                {% for sub in subjects %}{{ sub.name }}{% if not forloop.last %}, {% endif %}{% empty %}Aucune matière{% endfor %}
+            </strong></span>
+        </div>
+    </div>
+</div>
+
+<!-- Grid Details -->
+<div class="two-col">
+    <!-- Left Column: Personal info & Subjects -->
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-id"></i> Informations Administratives
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Nom d'utilisateur :</span>
+                    <strong style="color:var(--color-text-primary);">@{{ teacher.user.username }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Adresse Email :</span>
+                    <strong style="color:var(--color-text-primary);">{{ teacher.user.email|default:"Non renseigné" }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Volume horaire hebdo :</span>
+                    <strong style="color:var(--color-text-primary);">{{ total_hours }} heures</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Statut contrat :</span>
+                    <strong style="color:#1D9E75;">Actif</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Details -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-books"></i> Matières & Codes
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                {% for sub in subjects %}
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-primary); font-weight:600;">{{ sub.name }}</span>
+                    <strong class="badge bp" style="font-size:10px;">{{ sub.code }}</strong>
+                </div>
+                {% empty %}
+                <div style="color:var(--color-text-tertiary); text-align:center;">Aucune matière affectée.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Schedules & Leaves -->
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <!-- Schedule / Classes -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-calendar"></i> Intervention dans les classes
+            </h3>
+            <div style="max-height:180px; overflow-y:auto; border:1px solid var(--color-border); border-radius:var(--border-radius-sm);">
+                <table style="width:100%; font-size:11px; border-collapse:collapse;">
+                    <thead style="background:var(--color-background-tertiary); position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:6px; text-align:left; border-bottom:1px solid var(--color-border);">Classe</th>
+                            <th style="padding:6px; text-align:left; border-bottom:1px solid var(--color-border);">Jour</th>
+                            <th style="padding:6px; text-align:center; border-bottom:1px solid var(--color-border);">Horaire</th>
+                            <th style="padding:6px; text-align:right; border-bottom:1px solid var(--color-border);">Salle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sch in schedules %}
+                        <tr style="border-bottom:1px solid var(--color-border);">
+                            <td style="padding:6px; font-weight:600; color:var(--color-text-primary);">{{ sch.school_class.name }}</td>
+                            <td style="padding:6px; color:var(--color-text-secondary);">{{ sch.get_day_of_week_display }}</td>
+                            <td style="padding:6px; text-align:center; color:var(--color-text-secondary);">{{ sch.start_time|time:"H:i" }} - {{ sch.end_time|time:"H:i" }}</td>
+                            <td style="padding:6px; text-align:right; font-weight:600; color:var(--color-text-tertiary);">{{ sch.room|default:"—" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="padding:15px; text-align:center; color:var(--color-text-tertiary);">Aucun horaire d'enseignement configuré.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Leaves history -->
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-calendar-user"></i> Historique des demandes de congé
+            </h3>
+            <div style="max-height:180px; overflow-y:auto; border:1px solid var(--color-border); border-radius:var(--border-radius-sm);">
+                <table style="width:100%; font-size:11px; border-collapse:collapse;">
+                    <thead style="background:var(--color-background-tertiary); position:sticky; top:0;">
+                        <tr>
+                            <th style="padding:6px; text-align:left; border-bottom:1px solid var(--color-border);">Type</th>
+                            <th style="padding:6px; text-align:center; border-bottom:1px solid var(--color-border);">Dates</th>
+                            <th style="padding:6px; text-align:right; border-bottom:1px solid var(--color-border);">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lv in leaves %}
+                        <tr style="border-bottom:1px solid var(--color-border);">
+                            <td style="padding:6px; font-weight:600; color:var(--color-text-primary);">{{ lv.get_leave_type_display }}</td>
+                            <td style="padding:6px; text-align:center; color:var(--color-text-secondary);">
+                                {{ lv.start_date|date:"d/m" }} au {{ lv.end_date|date:"d/m/y" }}
+                            </td>
+                            <td style="padding:6px; text-align:right;">
+                                {% if lv.status == 'APPROVED' %}
+                                <span class="badge bg" style="font-size:9.5px; padding:2px 6px;">Approuvé</span>
+                                {% elif lv.status == 'REJECTED' %}
+                                <span class="badge br" style="font-size:9.5px; padding:2px 6px;">Refusé</span>
+                                {% else %}
+                                <span class="badge ba" style="font-size:9.5px; padding:2px 6px;">En attente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="padding:15px; text-align:center; color:var(--color-text-tertiary);">Aucune demande de congé enregistrée.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

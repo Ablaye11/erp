@@ -1,0 +1,192 @@
+<div style="display: flex; align-items: center; gap: 15px; padding: 14px 18px; background: var(--color-background-tertiary); border-radius: var(--border-radius-md); margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <div style="width: 42px; height: 42px; border-radius: 50%; background: #FAEEDA; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #854F0B;">{{ child_name|slice:":2"|upper }}</div>
+    <div>
+        <div style="font-size: 13.5px; font-weight: 600; color: var(--color-text-primary);">{{ child_name }}</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">Année scolaire 2024/2025 &nbsp;•&nbsp; Rang : {{ rank }}</div>
+    </div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+        <span class="badge {{ payment_badge }}" style="font-size: 10.5px; padding: 3px 8px;">{{ payment_status }}</span>
+        {% if payment_badge != 'bg' %}
+            <button class="btn btn-primary" onclick="document.getElementById('paymentModal').style.display='flex';" style="padding: 4px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                💳 Payer en ligne
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Moyenne</div>
+        {% if average >= 15 %}
+        <div class="stat-value" style="color: #1D9E75;">{{ average }}</div>
+        {% elif average >= 10 %}
+        <div class="stat-value" style="color: var(--color-primary);">{{ average }}</div>
+        {% else %}
+        <div class="stat-value" style="color: #E24B4A;">{{ average }}</div>
+        {% endif %}
+        <div class="stat-trend trend-neu">Trimestre actif</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Rang de classe</div>
+        <div class="stat-value">{{ rank }}</div>
+        <div class="stat-trend trend-neu">Dans la classe</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Assiduité</div>
+        <div class="stat-value">{{ attendance_rate }}</div>
+        <div class="stat-trend trend-up">Taux global</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Absences</div>
+        <div class="stat-value">{{ absences_count }}</div>
+        <div class="stat-trend trend-neu">Jours d'absence</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Messages -->
+    <div class="card">
+        <div class="section-title">Derniers messages de l'école</div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
+            {% for msg in messages_list %}
+            <div style="display: flex; gap: 10px;">
+                {% if msg.bg == '#E1F5EE' %}
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: #E1F5EE; color: #0F6E56; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0;">
+                {% else %}
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: #EEEDFE; color: #534AB7; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0;">
+                {% endif %}
+                    {{ msg.sender|slice:":2"|upper }}
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--color-text-tertiary);">{{ msg.sender }} — {{ msg.time }}</div>
+                    <div style="font-size: 12px; color: var(--color-text-primary); margin-top: 2px;">{{ msg.text }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="font-size: 11.5px; color: var(--color-text-secondary); text-align: center; padding: 15px 0; width: 100%;">
+                Aucun message récent de l'école.
+            </div>
+            {% endfor %}
+        </div>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;"
+                hx-get="{% url 'load_panel' 'messagerie' %}" hx-target="#mainContent" onclick="document.getElementById('topbarTitle').textContent='Messagerie'">
+            <i class="ti ti-message" aria-hidden="true"></i> Contacter l'école
+        </button>
+    </div>
+
+    <!-- Prochain cours -->
+    <div class="card">
+        <div class="section-title">Prochain cours</div>
+        <div style="display: flex; flex-direction: column;">
+            {% for course in courses %}
+            <div style="padding: 8px 0; border-bottom: 1px solid var(--color-border-tertiary);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-primary);">{{ course.subject }}</span>
+                    <span style="font-size: 10px; color: var(--color-text-tertiary);">{{ course.day }} — {{ course.room }}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">{{ course.teacher }}</div>
+            </div>
+            {% empty %}
+            <div style="font-size: 11.5px; color: var(--color-text-secondary); text-align: center; padding: 15px 0;">
+                Aucun cours planifié pour cet élève.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modale de Paiement en Ligne (Mobile Money & Carte) -->
+<div id="paymentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: all 0.3s ease;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 24px; box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; border-radius: var(--border-radius-lg); background: var(--color-background-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--color-border-tertiary); padding-bottom: 10px;">
+            <div style="font-size: 13.5px; font-weight: 700; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="ti ti-credit-card" style="color: var(--color-primary); font-size: 18px;"></i> Paiement Scolarité
+            </div>
+            <button onclick="document.getElementById('paymentModal').style.display='none';" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-tertiary);">&times;</button>
+        </div>
+        
+        <div id="paymentFormContainer">
+            <form hx-post="{% url 'record_online_payment' %}" hx-target="#paymentFormContainer">
+                {% csrf_token %}
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight: 600;">Mode de paiement</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <label style="border: 1px solid var(--color-border); border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--color-background-secondary);" onclick="selectPaymentMethod('MOBILE_MONEY')">
+                            <input type="radio" name="payment_method" value="MOBILE_MONEY" checked style="width: auto; margin: 0;">
+                            <span style="font-size: 11.5px; font-weight: 600; color: var(--color-text-primary);">Mobile Money</span>
+                        </label>
+                        <label style="border: 1px solid var(--color-border); border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--color-background-secondary);" onclick="selectPaymentMethod('CARD')">
+                            <input type="radio" name="payment_method" value="CARD" style="width: auto; margin: 0;">
+                            <span style="font-size: 11.5px; font-weight: 600; color: var(--color-text-primary);">Carte Bancaire</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Provider list (Mobile Money) -->
+                <div id="providerSection" style="margin-bottom: 12px;">
+                    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight: 600;">Opérateur</div>
+                    <select name="provider" style="width: 100%; padding: 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-background-primary); color: var(--color-text-primary);">
+                        <option value="Wave">Wave 🌊</option>
+                        <option value="Orange Money">Orange Money 🍊</option>
+                        <option value="Free Money">Free Money 🔴</option>
+                    </select>
+                </div>
+
+                <!-- Card Details Section (hidden by default) -->
+                <div id="cardSection" style="margin-bottom: 12px; display: none;">
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight: 500;">Numéro de carte</div>
+                        <input type="text" placeholder="4242 4242 4242 4242" style="width: 100%; font-size: 11.5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-background-primary); color: var(--color-text-primary);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight: 500;">Validité</div>
+                            <input type="text" placeholder="MM/AA" style="width: 100%; font-size: 11.5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-background-primary); color: var(--color-text-primary);">
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight: 500;">CVC</div>
+                            <input type="password" placeholder="***" style="width: 100%; font-size: 11.5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-background-primary); color: var(--color-text-primary);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phone number for mobile money -->
+                <div id="phoneSection" style="margin-bottom: 12px;">
+                    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight: 500;">Numéro de téléphone (Mobile Money)</div>
+                    <input type="text" placeholder="77 000 00 00" style="width: 100%; font-size: 11.5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-background-primary); color: var(--color-text-primary);">
+                </div>
+
+                <!-- Optional Amount -->
+                <div style="margin-bottom: 18px;">
+                    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; font-weight: 500;">Montant à verser (FCFA)</div>
+                    <input type="number" name="amount" placeholder="Laisser vide pour solder le trimestre" style="width: 100%; font-size: 11.5px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-background-primary); color: var(--color-text-primary);">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-weight: 600; font-size: 12px;">
+                    Confirmer le Paiement
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectPaymentMethod(method) {
+        if (method === 'CARD') {
+            document.getElementById('cardSection').style.display = 'block';
+            document.getElementById('providerSection').style.display = 'none';
+            document.getElementById('phoneSection').style.display = 'none';
+        } else {
+            document.getElementById('cardSection').style.display = 'none';
+            document.getElementById('providerSection').style.display = 'block';
+            document.getElementById('phoneSection').style.display = 'block';
+        }
+    }
+</script>
+
+<style>
+    @keyframes slideIn {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>

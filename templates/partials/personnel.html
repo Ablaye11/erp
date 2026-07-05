@@ -1,0 +1,137 @@
+<div style="display: flex; gap: 8px; margin-bottom: 15px;">
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" onclick="toggleAddForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un membre</button>
+    {% endif %}
+</div>
+
+<!-- Inline Form to Add Staff (hidden by default) -->
+<div id="addStaffFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-user-plus" aria-hidden="true"></i> Ajouter un membre administratif
+    </h3>
+    <form hx-post="{% url 'add_staff' %}" hx-target="#addStaffResult" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Prénom *</label>
+                <input type="text" name="first_name" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Nom *</label>
+                <input type="text" name="last_name" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Nom d'utilisateur *</label>
+                <input type="text" name="username" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Email</label>
+                <input type="email" name="email" style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Poste *</label>
+                <select name="position" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    <option value="Directeur">Directeur</option>
+                    <option value="Secrétaire">Secrétaire</option>
+                    <option value="Comptable">Comptable</option>
+                    <option value="Surveillant">Surveillant</option>
+                </select>
+            </div>
+        </div>
+        <div id="addStaffResult"></div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
+            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Rôle</th>
+                <th>Département</th>
+                <th>Contact</th>
+                <th>Statut</th>
+                {% if active_role == 'admin' %}
+                <th style="text-align: right;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for adm in admins %}
+            <tr id="staff-row-{{ adm.id }}">
+                <td style="cursor: pointer;"
+                    hx-get="{% url 'view_staff_profile' adm.id %}"
+                    hx-target="#mainContent"
+                    onclick="document.getElementById('topbarTitle').textContent='Profil Administratif'"
+                    title="Voir le profil">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary-light); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:600; flex-shrink:0; overflow:hidden;">
+                            {% if adm.user.avatar %}
+                                <img src="{{ adm.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+                            {% else %}
+                                {{ adm.user.get_full_name|slice:":1" }}
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--color-text-primary); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.2s;" onmouseover="this.style.textDecorationColor='var(--color-primary)'" onmouseout="this.style.textDecorationColor='transparent'">{{ adm.user.get_full_name }}</div>
+                    </div>
+                </td>
+                <td>{{ adm.position }}</td>
+                <td>
+                    {% if adm.position == 'Directeur' %}Direction
+                    {% elif adm.position == 'Secrétaire' %}Administration
+                    {% elif adm.position == 'Comptable' %}Finances
+                    {% else %}Général
+                    {% endif %}
+                </td>
+                <td style="color: var(--color-text-secondary);">
+                    {% if adm.position == 'Directeur' %}77 000 0001
+                    {% elif adm.position == 'Secrétaire' %}77 000 0002
+                    {% elif adm.position == 'Comptable' %}77 000 0003
+                    {% else %}77 000 0004
+                    {% endif %}
+                </td>
+                <td><span class="badge bg">Actif</span></td>
+                {% if active_role == 'admin' %}
+                <td style="text-align: right; display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+                    <button class="btn" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #E6F1FB; color: #185FA5; border: 1px solid #BEE3F8;"
+                            hx-get="{% url 'view_staff_profile' adm.id %}"
+                            hx-target="#mainContent"
+                            onclick="document.getElementById('topbarTitle').textContent='Profil Administratif'"
+                            title="Voir le profil">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                    {% if adm.user != request.user %}
+                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #FAEBEB; color: #A32D2D; border: 1px solid #F8D7DA;"
+                            hx-delete="{% url 'delete_staff' adm.id %}"
+                            hx-target="#staff-row-{{ adm.id }}"
+                            hx-swap="outerHTML"
+                            hx-confirm="Êtes-vous sûr de vouloir supprimer {{ adm.user.get_full_name }} ?"
+                            title="Supprimer">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                    {% else %}
+                    <span style="font-size: 10px; color: var(--color-text-tertiary); font-style: italic; margin-left: 8px;">Vous</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <!-- Fallback if empty -->
+            <tr><td style="font-weight:600">Diop Babacar</td><td>Directeur</td><td>Direction</td><td>77 000 0001</td><td><span class="badge bg">Actif</span></td></tr>
+            <tr><td style="font-weight:600">Faye Marème</td><td>Secrétaire</td><td>Administration</td><td>77 000 0002</td><td><span class="badge bg">Actif</span></td></tr>
+            <tr><td style="font-weight:600">Seck Ibou</td><td>Comptable</td><td>Finances</td><td>77 000 0003</td><td><span class="badge bg">Actif</span></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleAddForm() {
+        const form = document.getElementById('addStaffFormContainer');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+</script>

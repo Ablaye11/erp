@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — École Al-Nour ERP</title>
+    <meta name="description" content="Espace de connexion sécurisé pour l'ERP Scolaire École Al-Nour">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #534ab7;
+            --primary-hover: #3c3489;
+            --primary-light: rgba(83, 74, 183, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 30px 20px 70px;
+            overflow-y: auto;
+            background: #0f0c29;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+
+
+        /* Animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 15% 20%, rgba(83, 74, 183, 0.7) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 80%, rgba(40, 32, 110, 0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(20, 15, 60, 0.9) 0%, transparent 70%);
+            background-color: #0a0820;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes bgPulse {
+            0%   { filter: hue-rotate(0deg) brightness(1); }
+            100% { filter: hue-rotate(15deg) brightness(1.1); }
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: -1;
+            animation: float 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 400px; height: 400px; background: #534ab7; top: -100px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 300px; height: 300px; background: #a855f7; bottom: -80px; right: -80px; animation-delay: -4s; }
+        .orb-3 { width: 200px; height: 200px; background: #06b6d4; bottom: 30%; left: 10%; animation-delay: -8s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50%       { transform: translateY(-30px) scale(1.05); }
+        }
+
+        /* Main container */
+        .login-container {
+            width: 100%;
+            max-width: 430px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            animation: fadeUp 0.5s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .login-header {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .login-logo-wrap {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 16px;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(83, 74, 183, 0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .login-logo-wrap:hover {
+            transform: rotate(8deg) scale(1.05);
+        }
+
+        .login-logo-wrap i {
+            font-size: 30px;
+            color: #fff;
+        }
+
+        .login-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 20px rgba(83, 74, 183, 0.4);
+        }
+
+        .login-header p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        /* Login card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow:
+                0 25px 50px rgba(0, 0, 0, 0.35),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        }
+
+        /* Error messages */
+        .login-errors {
+            background: rgba(226, 75, 74, 0.12);
+            border: 1px solid rgba(226, 75, 74, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: #ff8080;
+        }
+
+        .login-errors ul {
+            list-style: none;
+        }
+
+        /* Form groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 8px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .form-group label i {
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-sm);
+            color: #fff;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .form-group input:focus {
+            border-color: rgba(83, 74, 183, 0.7);
+            background: rgba(83, 74, 183, 0.08);
+            box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.2);
+        }
+
+        /* Submit button */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #534ab7 0%, #3c3489 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(83, 74, 183, 0.4);
+            transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+            margin-top: 4px;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #6257cc 0%, #4a3fa8 100%);
+            box-shadow: 0 6px 24px rgba(83, 74, 183, 0.55);
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0) scale(0.99);
+        }
+
+        .btn-login i {
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+
+        .btn-login:hover i {
+            transform: translateX(3px);
+        }
+
+        /* Demo helper */
+        .login-demo {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .login-demo h3 {
+            font-family: 'Outfit', sans-serif;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        .login-demo h3 code {
+            background: rgba(83, 74, 183, 0.3);
+            color: #a99ef8;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .demo-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            text-align: left;
+        }
+
+        .demo-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .demo-btn:active {
+            transform: scale(0.98);
+        }
+
+        .demo-role {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.06em;
+            display: inline-block;
+        }
+
+        .role-admin   { background: rgba(83, 74, 183, 0.2); color: #a99ef8; }
+        .role-teacher { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+        .role-student { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+        .role-parent  { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+
+        .demo-username {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .demo-tip {
+            margin-top: 10px;
+            font-size: 10.5px;
+            color: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card { padding: 24px 18px; }
+            .demo-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="login-container">
+        <!-- Header -->
+        <div class="login-header">
+            <div class="login-logo-wrap">
+                <i class="ti ti-school"></i>
+            </div>
+            <h1>École Al-Nour</h1>
+            <p>ERP Scolaire — Espace de Connexion Sécurisé</p>
+        </div>
+
+        <!-- Card de connexion -->
+        <div class="login-card">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="login-errors" style="background: rgba(226, 75, 74, 0.12); border-color: rgba(226, 75, 74, 0.3); color: #ff8080;">
+                    <i class="ti ti-alert-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% elif form.errors %}
+            <div class="login-errors">
+                <i class="ti ti-alert-circle"></i>
+                <span>Identifiants incorrects. Veuillez réessayer.</span>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" id="loginForm">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_username">
+                        <i class="ti ti-user"></i>
+                        Nom d'utilisateur
+                    </label>
+                    <input
+                        type="text"
+                        name="username"
+                        id="id_username"
+                        required
+                        placeholder="Ex: diop, fall_amadou..."
+                        autocomplete="username"
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">
+                        <i class="ti ti-lock"></i>
+                        Mot de passe
+                    </label>
+                    <input
+                        type="password"
+                        name="password"
+                        id="id_password"
+                        required
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span>Se connecter</span>
+                    <i class="ti ti-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Comptes de démo -->
+        <div class="login-demo">
+            <h3>🔑 Comptes démo — mot de passe : <code>pass123</code></h3>
+            <div class="demo-grid">
+                <button class="demo-btn" onclick="fillLogin('diop', 'pass123')" type="button">
+                    <span class="demo-role role-admin">👔 Admin</span>
+                    <span class="demo-username">diop</span>
+                </button>
+                <button class="demo-btn" onclick="fillLogin('fall_amadou', 'pass123')" type="button">
+                    <span class="demo-role role-teacher">📚 Prof</span>
+                    <span class="demo-username">fall_amadou</span>
+                </button>
+                <button class="demo-btn" onclick="fillLogin('sarr_kofi', 'pass123')" type="button">
+                    <span class="demo-role role-student">🎓 Élève</span>
+                    <span class="demo-username">sarr_kofi</span>
+                </button>
+                <button class="demo-btn" onclick="fillLogin('sarr_awa', 'pass123')" type="button">
+                    <span class="demo-role role-parent">👨‍👩‍👧 Parent</span>
+                    <span class="demo-username">sarr_awa</span>
+                </button>
+            </div>
+            <p class="demo-tip">
+                <i class="ti ti-info-circle"></i>
+                Cliquez sur un compte pour remplir automatiquement les champs.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function fillLogin(user, pass) {
+            document.getElementById('id_username').value = user;
+            document.getElementById('id_password').value = pass;
+            // Petit effet visuel
+            document.getElementById('id_password').style.borderColor = 'rgba(83, 74, 183, 0.7)';
+            setTimeout(() => {
+                document.getElementById('id_password').style.borderColor = '';
+            }, 600);
+        }
+
+        // Animation sur le bouton au submit
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            const btn = document.getElementById('loginBtn');
+            btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> <span>Connexion...</span>';
+            btn.disabled = true;
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `.animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

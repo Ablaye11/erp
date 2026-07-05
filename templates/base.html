@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}École Al-Nour - ERP Scolaire{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        document.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+    <!-- Custom Style -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260617" id="mainStylesheet">
+    <style>
+    /* ── Modale de confirmation globale ─────────────────────────────── */
+    #globalConfirmModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    #globalConfirmModal.open { display: flex; }
+    #gcm-box {
+        background: var(--color-background-secondary, #1e1e2e);
+        border: 1px solid var(--color-border, rgba(255,255,255,0.08));
+        border-radius: 20px;
+        width: 100%;
+        max-width: 430px;
+        padding: 32px 28px 24px;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+        animation: gcm-in 0.22s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes gcm-in {
+        from { opacity: 0; transform: scale(0.88) translateY(20px); }
+        to   { opacity: 1; transform: scale(1)   translateY(0); }
+    }
+    #gcm-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin: 0 auto 18px;
+        flex-shrink: 0;
+    }
+    #gcm-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--color-text-primary, #fff);
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    #gcm-message {
+        font-size: 13.5px;
+        color: var(--color-text-secondary, rgba(255,255,255,0.6));
+        text-align: center;
+        line-height: 1.6;
+        margin-bottom: 26px;
+    }
+    #gcm-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+    #gcm-confirm-btn {
+        padding: 11px 28px;
+        font-size: 13.5px;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: opacity .15s, transform .1s;
+        color: #fff;
+    }
+    #gcm-confirm-btn:hover { opacity: .88; transform: scale(1.02); }
+    #gcm-cancel-btn {
+        padding: 11px 24px;
+        font-size: 13.5px;
+        font-weight: 500;
+        border: 1px solid var(--color-border, rgba(255,255,255,0.12));
+        border-radius: 10px;
+        background: transparent;
+        color: var(--color-text-secondary, rgba(255,255,255,0.7));
+        cursor: pointer;
+        transition: background .15s;
+    }
+    #gcm-cancel-btn:hover { background: var(--color-background-tertiary, rgba(255,255,255,0.06)); }
+    </style>
+    <!-- Anti-cache pour le développement -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- PWA (C4) -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#534ab7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body {% block body_attr %}{% endblock %}>
+    <!-- Django Messages System -->
+    {% if messages %}
+    <div class="toast-container" id="toastContainer">
+        {% for message in messages %}
+        <div class="toast {% if message.tags %}toast-{{ message.tags }}{% endif %}">
+            <div class="toast-content">
+                <i class="ti {% if message.tags == 'error' %}ti-alert-circle{% elif message.tags == 'success' %}ti-circle-check{% else %}ti-info-circle{% endif %}" aria-hidden="true"></i>
+                <span>{{ message }}</span>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+        <script>
+            setTimeout(() => {
+                const container = document.getElementById('toastContainer');
+                if (container) {
+                    container.style.opacity = '0';
+                    setTimeout(() => container.remove(), 500);
+                }
+            }, 4000);
+        </script>
+    </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- ── Modale de confirmation globale (remplace window.confirm) ── -->
+    <div id="globalConfirmModal" role="dialog" aria-modal="true" aria-labelledby="gcm-title">
+        <div id="gcm-box">
+            <div id="gcm-icon">
+                <i class="ti ti-alert-triangle"></i>
+            </div>
+            <div id="gcm-title">Confirmation</div>
+            <div id="gcm-message"></div>
+            <div id="gcm-actions">
+                <button id="gcm-confirm-btn" type="button">Confirmer</button>
+                <button id="gcm-cancel-btn"  type="button" onclick="gcmClose()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Service Worker (C4) -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(function(err) {
+                console.log('SW registration failed:', err);
+            });
+        });
+    }
+    </script>
+
+    <!-- ── Interception globale htmx:confirm → belle modale ─────────── -->
+    <script>
+    (function () {
+        /* Couleurs selon type d'action */
+        const PRESETS = {
+            danger  : { bg:'#3d1515', color:'#f87171', btnBg:'#dc2626' },
+            warning : { bg:'#3d2f10', color:'#fbbf24', btnBg:'#d97706' },
+            info    : { bg:'#12254a', color:'#60a5fa', btnBg:'#2563eb' },
+            success : { bg:'#0f2e1f', color:'#34d399', btnBg:'#059669' },
+        };
+
+        let _pendingCallback = null;
+
+        /* Détecter le type selon le contenu du message */
+        function detectPreset(msg) {
+            const m = msg.toLowerCase();
+            if (/supprimer|effacer|zéro|zéro|supprime/.test(m)) return 'danger';
+            if (/restaurer|remplacer|écraser/.test(m))           return 'warning';
+            return 'danger'; /* par défaut rouge */
+        }
+
+        function detectIcon(msg) {
+            const m = msg.toLowerCase();
+            if (/restaurer/.test(m))  return 'ti-database-import';
+            if (/supprimer/.test(m))  return 'ti-trash';
+            if (/zéro|zéro/.test(m)) return 'ti-refresh-alert';
+            return 'ti-alert-triangle';
+        }
+
+        function detectTitle(msg) {
+            const m = msg.toLowerCase();
+            if (/restaurer/.test(m))            return 'Restaurer la sauvegarde';
+            if (/supprimer/.test(m))            return 'Confirmer la suppression';
+            if (/zéro|zéro/.test(m))           return 'Remettre à zéro';
+            if (/démonstration|démo/.test(m))  return 'Charger les données démo';
+            return 'Confirmation requise';
+        }
+
+        window.gcmClose = function () {
+            const modal = document.getElementById('globalConfirmModal');
+            if (modal) modal.classList.remove('open');
+            _pendingCallback = null;
+        };
+
+        window.gcmShow = function (message, onConfirm, opts) {
+            opts = opts || {};
+            const preset = PRESETS[opts.type || detectPreset(message)];
+            const icon   = opts.icon  || detectIcon(message);
+            const title  = opts.title || detectTitle(message);
+            const btnTxt = opts.btnText || 'Confirmer';
+
+            document.getElementById('gcm-title').textContent   = title;
+            document.getElementById('gcm-message').textContent = message;
+
+            const iconEl = document.getElementById('gcm-icon');
+            iconEl.innerHTML = `<i class="ti ${icon}"></i>`;
+            iconEl.style.background = preset.bg;
+            iconEl.style.color      = preset.color;
+
+            const btn = document.getElementById('gcm-confirm-btn');
+            btn.textContent       = btnTxt;
+            btn.style.background  = preset.btnBg;
+
+            _pendingCallback = onConfirm;
+
+            /* Écoute le bouton confirmer (clone pour supprimer anciens listeners) */
+            const fresh = btn.cloneNode(true);
+            btn.parentNode.replaceChild(fresh, btn);
+            fresh.style.background = preset.btnBg;
+            fresh.textContent      = btnTxt;
+            fresh.id = 'gcm-confirm-btn';
+            fresh.onclick = function () {
+                const cb = _pendingCallback;
+                gcmClose();
+                if (cb) cb();
+            };
+
+            document.getElementById('globalConfirmModal').classList.add('open');
+        };
+
+        /* Fermer en cliquant sur le backdrop */
+        document.getElementById('globalConfirmModal').addEventListener('click', function (e) {
+            if (e.target === this) gcmClose();
+        });
+
+        /* Fermer avec Escape */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') gcmClose();
+        });
+
+        /* ── Override global de htmx:confirm ─────────────────────────── */
+        document.addEventListener('htmx:confirm', function (evt) {
+            if (!evt.detail.question) return; /* pas de message → ne pas bloquer */
+            evt.preventDefault();
+            gcmShow(
+                evt.detail.question,
+                function () { evt.detail.issueRequest(true); }
+            );
+        });
+    })();
+    </script>
+</body>
+</html>

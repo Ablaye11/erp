@@ -1,0 +1,108 @@
+<!-- Tableau de classement par classe et trimestre -->
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <select name="class_id" 
+                hx-get="{% url 'load_panel' 'classement' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="[name='term']"
+                style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="term"
+                hx-get="{% url 'load_panel' 'classement' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="[name='class_id']"
+                style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);">
+            <option value="0" {% if selected_term == 0 %}selected{% endif %}>Annuel</option>
+            {% for t in term_range %}
+            <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>Trimestre {{ t }}</option>
+            {% endfor %}
+        </select>
+
+        {% if selected_class %}
+        <span style="margin-left: auto; font-size: 12px; font-weight: 600; color: var(--color-primary);">
+            <i class="ti ti-users"></i> {{ ranking|length }} élève{{ ranking|length|pluralize }}
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+{% if selected_class and ranking %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 12px 16px; background: linear-gradient(135deg, var(--color-primary), #7C6FD4); color: #fff; display: flex; align-items: center; gap: 10px;">
+        <i class="ti ti-trophy" style="font-size: 20px;"></i>
+        <div>
+            <div style="font-size: 14px; font-weight: 700;">Classement — {{ selected_class.name }}</div>
+            <div style="font-size: 11px; opacity: 0.85;">{% if selected_term == 0 %}Résultats annuels{% else %}Trimestre {{ selected_term }}{% endif %}</div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px; text-align:center;">Rang</th>
+                    <th>Élève</th>
+                    <th style="text-align:center; width:120px;">Moy. pondérée /20</th>
+                    <th style="text-align:center; width:80px;">Absences</th>
+                    <th style="text-align:center; width:100px;">Notes / Coefs</th>
+                    <th style="text-align:center; width:90px;">Mention</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in ranking %}
+                <tr style="{% if r.rank == 1 %}background: linear-gradient(90deg, rgba(255,215,0,0.08), transparent);{% elif r.rank == 2 %}background: linear-gradient(90deg, rgba(192,192,192,0.08), transparent);{% elif r.rank == 3 %}background: linear-gradient(90deg, rgba(205,127,50,0.08), transparent);{% endif %}">
+                    <td style="text-align:center; font-weight:700; font-size:15px; color:{% if r.rank == 1 %}#DAA520{% elif r.rank == 2 %}#808080{% elif r.rank == 3 %}#CD7F32{% else %}var(--color-text-secondary){% endif %};">
+                        {% if r.rank == 1 %}🥇{% elif r.rank == 2 %}🥈{% elif r.rank == 3 %}🥉{% else %}{{ r.rank }}{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">
+                                {{ r.name|slice:":1" }}
+                            </div>
+                            <span style="font-weight:600; color:var(--color-text-primary); font-size:12.5px;">{{ r.name }}</span>
+                        </div>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-size:14px; font-weight:700; color:{% if r.avg >= 14 %}#0F6E56{% elif r.avg >= 10 %}#854F0B{% else %}#A32D2D{% endif %};">
+                            {{ r.avg }}
+                        </span>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-size:12px; {% if r.absences > 5 %}color:#A32D2D; font-weight:600;{% else %}color:var(--color-text-secondary);{% endif %}">
+                            {{ r.absences }}
+                        </span>
+                    </td>
+                    <td style="text-align:center; font-size:11px; color:var(--color-text-secondary);">
+                        {{ r.grade_count }} note{{ r.grade_count|pluralize }}<br>
+                        <span style="font-size:10px; color:var(--color-primary); font-weight:600;">Σcoef={{ r.total_coef }}</span>
+                    </td>
+                    <td style="text-align:center;">
+                        <span class="badge {{ r.badge }}" style="font-size:10px;">
+                            {% if r.avg >= 16 %}Excellent{% elif r.avg >= 14 %}Très bien{% elif r.avg >= 12 %}Bien{% elif r.avg >= 10 %}Assez bien{% else %}Insuffisant{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% elif selected_class and not ranking %}
+<div class="empty-state">
+    <i class="ti ti-chart-bar" style="font-size:32px;"></i>
+    Aucune note enregistrée pour cette classe ce trimestre.
+</div>
+
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-trophy" style="font-size:32px;"></i>
+    Sélectionnez une classe pour afficher le classement.
+</div>
+{% endif %}

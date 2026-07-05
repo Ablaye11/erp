@@ -1,0 +1,213 @@
+<!-- Phase 2: Filtres corrigés pour les élèves avec HTMX include correct -->
+<div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+    <button class="btn btn-primary" onclick="toggleAddForm()">
+        <i class="ti ti-plus" aria-hidden="true"></i> Nouvel élève
+    </button>
+    
+    <!-- Filtre classe -->
+    <select name="class_id" id="eleveClassFilter" 
+            hx-get="{% url 'load_panel' 'eleves' %}" 
+            hx-target="#mainContent" 
+            hx-trigger="change"
+            hx-include="#eleveSearchInput"
+            style="font-size: 12px;">
+        <option value="">Toutes les classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if selected_class == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+    </select>
+    
+    <!-- Recherche temps réel -->
+    <input type="text" name="q" id="eleveSearchInput"
+           placeholder="Rechercher un élève..." 
+           value="{{ search_query }}"
+           hx-get="{% url 'load_panel' 'eleves' %}" 
+           hx-target="#mainContent" 
+           hx-trigger="keyup changed delay:400ms"
+           hx-include="#eleveClassFilter"
+           style="flex: 1; min-width: 150px; font-size: 12px;">
+    
+    <a href="{% url 'export_students_excel' %}" class="btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="ti ti-download" aria-hidden="true"></i> Export Excel
+    </a>
+    
+    <span style="font-size: 11px; color: var(--color-text-tertiary);">
+        {{ students|length }} élève(s)
+    </span>
+</div>
+
+<!-- Formulaire d'ajout (caché par défaut) -->
+<div id="addStudentFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary);">
+    <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-user-plus" aria-hidden="true"></i> Ajouter un nouvel élève
+    </h3>
+    <form hx-post="{% url 'add_student' %}" hx-target="#addStudentResult" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Prénom *</label>
+                <input type="text" name="first_name" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Nom *</label>
+                <input type="text" name="last_name" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Username *</label>
+                <input type="text" name="username" required style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Email</label>
+                <input type="email" name="email" style="width: 100%;">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Classe *</label>
+                <select name="class_id" required style="width: 100%;">
+                    {% for c in classes %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div id="addStudentResult"></div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
+            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Élève</th>
+                <th>Classe</th>
+                <th>Moyenne</th>
+                <th>Présence</th>
+                <th>Paiement</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in students %}
+            <tr id="student-row-{{ s.profile.id }}">
+                <td style="cursor: pointer;" 
+                    hx-get="{% url 'view_student_profile' s.profile.id %}" 
+                    hx-target="#mainContent" 
+                    onclick="document.getElementById('topbarTitle').textContent='Profil Élève'"
+                    title="Voir le profil">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary-light); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:600; flex-shrink:0; overflow:hidden;">
+                            {% if s.profile.user.avatar %}
+                                <img src="{{ s.profile.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+                            {% else %}
+                                {{ s.name|slice:":1" }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--color-text-primary); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.2s;" onmouseover="this.style.textDecorationColor='var(--color-primary)'" onmouseout="this.style.textDecorationColor='transparent'">{{ s.name }}</div>
+                            <div style="font-size: 10px; color: var(--color-text-tertiary);">{{ s.profile.registration_number }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge bp">{{ s.class }}</span></td>
+                <td>
+                    {% if s.average %}
+                        {% if s.average >= 15 %}
+                            <span style="font-weight: 600; color: #1D9E75;">{{ s.average }}/20</span>
+                        {% elif s.average >= 12 %}
+                            <span style="font-weight: 600; color: var(--color-primary);">{{ s.average }}/20</span>
+                        {% elif s.average >= 10 %}
+                            <span style="font-weight: 600; color: #854F0B;">{{ s.average }}/20</span>
+                        {% else %}
+                            <span style="font-weight: 600; color: #E24B4A;">{{ s.average }}/20</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: var(--color-text-tertiary);">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if s.attendance_pct >= 90 %}bg{% else %}ba{% endif %}">{{ s.attendance_pct }}%</span>
+                </td>
+                <td>
+                    <span class="badge {% if s.payment_status == 'À jour' %}bg{% else %}br{% endif %}">{{ s.payment_status }}</span>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 8px; align-items:center;">
+                        <button class="btn" style="padding:4px 8px; font-size:11px;"
+                           hx-get="{% url 'view_student_profile' s.profile.id %}" 
+                           hx-target="#mainContent" 
+                           onclick="document.getElementById('topbarTitle').textContent='Profil Élève'"
+                           title="Voir le profil">
+                            <i class="ti ti-eye" style="color:var(--color-primary);"></i>
+                        </button>
+                        <button class="btn" style="padding:4px 8px; font-size:11px;"
+                           hx-get="{% url 'load_panel' 'bulletin' %}?student_id={{ s.profile.id }}" 
+                           hx-target="#mainContent" 
+                           onclick="document.getElementById('topbarTitle').textContent='Bulletin'"
+                           title="Voir le bulletin">
+                            <i class="ti ti-report" style="color:var(--color-text-secondary);"></i>
+                        </button>
+                        <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;"
+                           hx-delete="{% url 'delete_student' s.profile.id %}"
+                           hx-target="#student-row-{{ s.profile.id }}"
+                           hx-swap="outerHTML"
+                           hx-confirm="Supprimer définitivement l'élève {{ s.name }} ?"
+                           title="Supprimer">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <i class="ti ti-users-off" style="font-size:28px;"></i>
+                        Aucun élève trouvé.
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleAddForm() {
+        const form = document.getElementById('addStudentFormContainer');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+    function toggleImportForm() {
+        const form = document.getElementById('importStudentsFormContainer');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
+
+{% if active_role == 'admin' %}
+<!-- Import CSV Form -->
+<div style="margin-top: 15px;">
+    <button class="btn" onclick="toggleImportForm()" style="font-size: 11px;">
+        <i class="ti ti-upload" aria-hidden="true"></i> Importer via CSV
+    </button>
+</div>
+
+<div id="importStudentsFormContainer" class="card" style="display: none; margin-top: 10px; border-left: 3px solid #1D9E75; background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 8px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-file-text" aria-hidden="true"></i> Import CSV élèves
+    </h3>
+    <p style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px;">
+        Format attendu (séparateur <code>;</code> ou <code>,</code>) : <code>Prénom;Nom;Username;Email;Classe</code>
+    </p>
+    <form hx-post="{% url 'import_students_csv' %}" hx-target="#importStudentsResult" hx-swap="innerHTML" hx-encoding="multipart/form-data">
+        {% csrf_token %}
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="file" name="csv_file" accept=".csv" required style="font-size: 12px;">
+            <button type="submit" class="btn btn-primary" style="font-size: 12px;"><i class="ti ti-upload" aria-hidden="true"></i> Importer</button>
+            <button type="button" class="btn" onclick="toggleImportForm()" style="font-size: 12px;">Annuler</button>
+        </div>
+        <div id="importStudentsResult" style="margin-top: 10px;"></div>
+    </form>
+</div>
+{% endif %}

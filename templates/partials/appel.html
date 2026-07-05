@@ -1,0 +1,79 @@
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <form hx-get="{% url 'load_panel' 'appel' %}" hx-target="#mainContent" hx-trigger="change" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <select name="class_id" id="appelClassSelect" style="font-size: 12px;">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        
+        <input type="date" name="date" id="appelDate" value="{{ today }}" style="font-size: 12px;">
+        <select name="period" id="appelPeriod" style="font-size: 12px;">
+            <option value="MATIN" {% if selected_period == 'MATIN' %}selected{% endif %}>Matin (08h-12h)</option>
+            <option value="APRES_MIDI" {% if selected_period == 'APRES_MIDI' %}selected{% endif %}>Après-midi (14h-17h)</option>
+        </select>
+    </form>
+</div>
+
+{% if selected_class_id %}
+<form hx-post="{% url 'save_attendance' %}" hx-encoding="multipart/form-data" hx-target="#appelResult">
+    {% csrf_token %}
+    <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+    <input type="hidden" name="date" value="{{ today }}">
+    <input type="hidden" name="period" value="{{ selected_period|default:'MATIN' }}">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary);">
+            Faire l'appel
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Valider l'appel</button>
+    </div>
+    
+    <div id="appelResult"></div>
+    
+    <div class="two-col" style="margin-bottom: 12px;">
+        <div class="stat-card" style="padding: 10px 14px;"><div class="stat-label">Présents</div><div class="stat-value" style="color:#1D9E75; font-size: 18px;">{{ presents_count }}</div></div>
+        <div class="stat-card" style="padding: 10px 14px;"><div class="stat-label">Absents</div><div class="stat-value" style="color:#E24B4A; font-size: 18px;">{{ absents_count }}</div></div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Élève</th>
+                    <th>Présent</th>
+                    <th>Absent</th>
+                    <th>Retard</th>
+                    <th>Note / Commentaire</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--color-text-primary);">{{ s.user.get_full_name }}</td>
+                    <td><input type="radio" name="attendance_{{ s.id }}" value="PRESENT" {% if s.attendance_status == 'PRESENT' %}checked{% endif %}></td>
+                    <td><input type="radio" name="attendance_{{ s.id }}" value="ABSENT" {% if s.attendance_status == 'ABSENT' %}checked{% endif %}></td>
+                    <td><input type="radio" name="attendance_{{ s.id }}" value="LATE" {% if s.attendance_status == 'LATE' %}checked{% endif %}></td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <input type="text" name="excuse_{{ s.id }}" value="{{ s.attendance_excuse|default:'' }}" placeholder="—" style="font-size: 11px; width: 90px; padding: 3px 6px;">
+                            {% if s.attendance_justification_url %}
+                            <a href="{{ s.attendance_justification_url }}" target="_blank" title="Voir le justificatif" style="color: var(--color-primary); font-size: 14px;">
+                                <i class="ti ti-file-text"></i>
+                            </a>
+                            {% endif %}
+                            <input type="file" name="file_{{ s.id }}" style="font-size: 9px; max-width: 100px;" title="Joindre un justificatif">
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-users" aria-hidden="true" style="font-size: 32px;"></i>
+    Veuillez choisir une classe pour effectuer l'appel.
+</div>
+{% endif %}

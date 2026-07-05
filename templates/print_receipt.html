@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Reçu de Paiement - {{ payment.student.user.get_full_name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        .receipt-card {
+            max-width: 480px;
+            margin: 30px auto;
+            border: 1px solid #e2e8f0;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed #cbd5e1;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            margin: 2px 0;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .receipt-title {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 15px 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .details-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #f1f5f9;
+            padding-bottom: 6px;
+        }
+
+        .detail-row .label {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .detail-row .value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .amount-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .amount-box .label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .amount-box .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 15px;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .receipt-card {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="no-print" style="max-width: 480px; margin: 10px auto; display: flex; gap: 8px; justify-content: flex-end;">
+    <button onclick="downloadPDF()" style="background: #1D5FA5; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+        💾 PDF
+    </button>
+    <button onclick="window.print()" style="background: #0f172a; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+        🖨️ Imprimer
+    </button>
+    <button onclick="window.close()" style="background: #cbd5e1; color: #334155; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
+        Fermer
+    </button>
+</div>
+
+<div class="receipt-card">
+    <div class="header">
+        <h1>{{ school_name }}</h1>
+        <p>{{ school_city }}</p>
+        <p>Email: {{ school_email }}</p>
+        <p>Téléphone: +221 33 800 00 00</p>
+    </div>
+
+    <div class="receipt-title">REÇU DE PAIEMENT</div>
+
+    <div class="details-grid">
+        <div class="detail-row">
+            <span class="label">Date du paiement :</span>
+            <span class="value">{{ payment.paid_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">N° de reçu :</span>
+            <span class="value" style="font-family:monospace;letter-spacing:1px;">{{ payment.receipt_number|default:"—" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Élève :</span>
+            <span class="value">{{ payment.student.user.get_full_name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Classe :</span>
+            <span class="value">{{ payment.student.class_room.name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Frais associés :</span>
+            <span class="value">{{ payment.tuition_fee.get_term_display }} ({{ payment.tuition_fee.school_year }})</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Mode de paiement :</span>
+            <span class="value">
+                {% if payment.payment_method == 'CARD' %}
+                    Carte Bancaire
+                {% elif payment.payment_method == 'MOBILE_MONEY' %}
+                    Mobile Money (Wave/Orange Money)
+                {% else %}
+                    Espèces
+                {% endif %}
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Statut des frais :</span>
+            {% if payment.status == 'PAID' %}
+            <span class="value" style="color: #10b981;">
+            {% else %}
+            <span class="value" style="color: #f59e0b;">
+            {% endif %}
+                {% if payment.status == 'PAID' %}Payé en totalité{% else %}Paiement partiel{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="amount-box">
+        <span class="label">Montant Versé</span>
+        <span class="value">{{ payment.amount_paid|floatformat:0 }} FCFA</span>
+    </div>
+
+    <div class="footer">
+        <p>Merci pour votre confiance.</p>
+        <p style="font-size: 9px; margin-top: 10px;">École Al-Nour ERP • Document officiel imprimé le {{ today|date:"d/m/Y" }}</p>
+    </div>
+</div>
+
+<script>
+    function downloadPDF() {
+        const element = document.querySelector('.receipt-card');
+        const opt = {
+            margin:       10,
+            filename:     'Recu_Paiement_{{ payment.id }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a5', orientation: 'portrait' }
+        };
+        return html2pdf().set(opt).from(element).save();
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('download')) {
+            downloadPDF().then(() => {
+                setTimeout(function() {
+                    window.close();
+                }, 1500);
+            });
+        } else if (urlParams.has('print')) {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        }
+    }
+</script>
+</body>
+</html>

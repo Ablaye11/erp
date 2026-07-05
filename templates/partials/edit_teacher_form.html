@@ -1,0 +1,86 @@
+<!-- Formulaire d'édition du profil enseignant -->
+<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'view_teacher_profile' teacher.id %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Profil Enseignant'">
+        <i class="ti ti-arrow-left"></i> Annuler
+    </button>
+    <h2 style="font-size:14px; font-weight:700; color:var(--color-text-primary); display:flex; align-items:center; gap:8px; margin:0;">
+        <i class="ti ti-edit" style="color:var(--color-primary);"></i>
+        Modifier le profil de {{ teacher.user.get_full_name }}
+    </h2>
+</div>
+
+<div id="editTeacherResult"></div>
+
+<form hx-post="{% url 'edit_teacher' teacher.id %}"
+      hx-target="#editTeacherResult"
+      hx-swap="innerHTML">
+    {% csrf_token %}
+
+    <!-- Informations de base -->
+    <div class="card" style="margin-bottom:15px;">
+        <h3 style="font-size:13px; font-weight:600; margin-bottom:16px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+            <i class="ti ti-user"></i> Identité & Contact
+        </h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Prénom *</label>
+                <input type="text" name="first_name" value="{{ teacher.user.first_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Prénom">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom *</label>
+                <input type="text" name="last_name" value="{{ teacher.user.last_name }}" required
+                       style="width:100%; font-size:13px;" placeholder="Nom de famille">
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Adresse Email</label>
+                <input type="email" name="email" value="{{ teacher.user.email }}"
+                       style="width:100%; font-size:13px;" placeholder="email@exemple.com">
+            </div>
+
+            <div>
+                <label style="font-size:11px; font-weight:600; color:var(--color-text-secondary); display:block; margin-bottom:4px;">Nom d'utilisateur</label>
+                <input type="text" value="{{ teacher.user.username }}" disabled
+                       style="width:100%; font-size:13px; opacity:0.6; cursor:not-allowed; background:var(--color-background-tertiary);">
+                <span style="font-size:10px; color:var(--color-text-tertiary);">Non modifiable</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matières -->
+    <div class="card" style="margin-bottom:15px;">
+        <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+            <i class="ti ti-books"></i> Matières enseignées
+        </h3>
+        <p style="font-size:11px; color:var(--color-text-tertiary); margin-bottom:10px;">Cochez les matières que cet enseignant enseigne :</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:8px;">
+            {% for sub in all_subjects %}
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--color-border); border-radius:var(--border-radius-sm); cursor:pointer; transition:background 0.2s;"
+                   onmouseover="this.style.background='var(--color-primary-light)'"
+                   onmouseout="this.style.background='transparent'">
+                <input type="checkbox" name="subject_ids" value="{{ sub.id }}"
+                       {% if sub.id in selected_subjects %}checked{% endif %}
+                       style="accent-color:var(--color-primary); width:14px; height:14px;">
+                <span style="font-size:12px; font-weight:600; color:var(--color-text-primary);">{{ sub.name }}</span>
+                <span style="font-size:10px; color:var(--color-text-tertiary); margin-left:auto;">{{ sub.code }}</span>
+            </label>
+            {% empty %}
+            <p style="color:var(--color-text-tertiary); font-size:12px;">Aucune matière configurée.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn"
+                hx-get="{% url 'view_teacher_profile' teacher.id %}" hx-target="#mainContent"
+                style="font-size:13px;">
+            <i class="ti ti-x"></i> Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" style="font-size:13px; padding:8px 20px;">
+            <i class="ti ti-device-floppy"></i> Enregistrer les modifications
+        </button>
+    </div>
+</form>

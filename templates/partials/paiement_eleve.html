@@ -1,0 +1,28 @@
+<div class="card" style="margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--color-text-primary);">Frais de scolarité 2024/2025</div>
+            <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 3px;">225 000 FCFA / an — 75 000 FCFA / trimestre</div>
+        </div>
+        <span class="badge bg" style="font-size: 11px; padding: 4px 10px;">À jour</span>
+    </div>
+    
+    <div style="display: flex; flex-direction: column;">
+        {% for pay in payments %}
+        <div class="paiement-row">
+            <div>
+                <div style="font-weight: 600; color: var(--color-text-primary);">{{ pay.term }}</div>
+                <div style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px;">{{ pay.date }}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; font-size: 13px;">{{ pay.amount }}</div>
+                <span class="badge {{ pay.badge }}" style="margin-top: 3px; font-size: 9px;">{{ pay.status }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div style="display: flex; gap: 8px;">
+    <button class="btn btn-primary" onclick="alert('Reçu téléchargé !')"><i class="ti ti-credit-card" aria-hidden="true"></i> Télécharger reçu</button>
+</div>

@@ -1,0 +1,42 @@
+<div style="display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap;">
+    <div class="stat-card" style="flex: 1; min-width: 150px; padding: 12px 16px;">
+        <div class="stat-label">Absences (trimestre)</div>
+        <div class="stat-value">2</div>
+        <div class="stat-trend trend-up">2 justifiées</div>
+    </div>
+    <div class="stat-card" style="flex: 1; min-width: 150px; padding: 12px 16px;">
+        <div class="stat-label">Retards</div>
+        <div class="stat-value">1</div>
+        <div class="stat-trend trend-neu">Ce trimestre</div>
+    </div>
+    <div class="stat-card" style="flex: 1; min-width: 150px; padding: 12px 16px;">
+        <div class="stat-label">Taux de présence</div>
+        <div class="stat-value">98%</div>
+        <div class="stat-trend trend-up">Très bien</div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Durée</th>
+                <th>Type</th>
+                <th>Justification</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for abs in absences %}
+            <tr>
+                <td style="font-weight: 600; color: var(--color-text-primary);">{{ abs.date }}</td>
+                <td>{{ abs.duration }}</td>
+                <td>{{ abs.type }}</td>
+                <td style="font-size: 11.5px; color: var(--color-text-secondary);">{{ abs.reason }}</td>
+                <td><span class="badge {{ abs.badge }}">{{ abs.status }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

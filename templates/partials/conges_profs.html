@@ -1,0 +1,179 @@
+<div style="display: flex; gap: 8px; margin-bottom: 15px;">
+    {% if active_role == 'admin' %}
+    <button class="btn btn-primary" onclick="toggleAddLeaveForm()"><i class="ti ti-plus" aria-hidden="true"></i> Enregistrer un congé / absence</button>
+    {% endif %}
+</div>
+
+<!-- Inline Form to Add Leave (hidden by default) -->
+{% if active_role == 'admin' %}
+<div id="addLeaveFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-calendar-plus" aria-hidden="true"></i> Enregistrer une absence / congé
+    </h3>
+    <form hx-post="{% url 'add_leave' %}" hx-swap="none">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Enseignant *</label>
+                <select name="teacher_id" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm); font-size: 12px;">
+                    <option value="">-- Sélectionner --</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}">{{ t.user.get_full_name|default:t.user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Type de congé *</label>
+                <select name="leave_type" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm); font-size: 12px;">
+                    <option value="CONGE">Congé annuel</option>
+                    <option value="MALADIE">Maladie</option>
+                    <option value="FORMATION">Formation</option>
+                    <option value="AUTRE">Autre</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Date de début *</label>
+                <input type="date" name="start_date" required style="width: 100%; height: 35px; font-size: 12px; border-radius: var(--border-radius-sm);">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Date de fin *</label>
+                <input type="date" name="end_date" required style="width: 100%; height: 35px; font-size: 12px; border-radius: var(--border-radius-sm);">
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Motif / Justification</label>
+                <input type="text" name="reason" placeholder="ex: Certificat médical fourni" style="width: 100%; height: 35px; font-size: 12px; border-radius: var(--border-radius-sm);">
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
+            <button type="button" class="btn" onclick="toggleAddLeaveForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Stats summary -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+    <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 15px;">
+        <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: #EEEDFE; color: #534AB7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ti ti-calendar"></i>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 600; text-transform: uppercase;">Total Demandes</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--color-text-primary);">{{ leaves|length }}</div>
+        </div>
+    </div>
+    <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 15px;">
+        <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: #FAEEDA; color: #854F0B; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ti ti-clock"></i>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 600; text-transform: uppercase;">En Attente</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--color-text-primary);">{{ pending_count }}</div>
+        </div>
+    </div>
+    <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 15px;">
+        <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: #E1F5EE; color: #0F6E56; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ti ti-circle-check"></i>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 600; text-transform: uppercase;">Total validés</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--color-text-primary);">
+                {{ leaves.all.count }} total
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Enseignant</th>
+                <th>Type</th>
+                <th>Période</th>
+                <th>Motif</th>
+                <th>Statut</th>
+                {% if active_role == 'admin' %}
+                <th style="text-align: right;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in leaves %}
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary-light); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:600; flex-shrink:0;">
+                            {{ l.teacher.user.get_full_name|default:l.teacher.user.username|slice:":1" }}
+                        </div>
+                        <div>
+                            <div style="font-size: 12.5px; font-weight: 600; color: var(--color-text-primary);">{{ l.teacher.user.get_full_name|default:l.teacher.user.username }}</div>
+                            <div style="font-size: 10px; color: var(--color-text-secondary);">Enregistré le {{ l.created_at|date:"d/m/Y" }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span style="font-size: 11.5px; font-weight: 500;">{{ l.get_leave_type_display }}</span>
+                </td>
+                <td>
+                    <div style="font-size: 11.5px; font-weight: 600; color: var(--color-text-primary);">du {{ l.start_date|date:"d/m/Y" }}</div>
+                    <div style="font-size: 11.5px; font-weight: 600; color: var(--color-text-primary);">au {{ l.end_date|date:"d/m/Y" }}</div>
+                </td>
+                <td style="max-width: 200px; white-space: normal; font-size: 11.5px; color: var(--color-text-secondary);">
+                    {{ l.reason|default:"Aucun motif spécifié" }}
+                </td>
+                <td>
+                    <span class="badge {% if l.status == 'APPROVED' %}bg{% elif l.status == 'PENDING' %}bp{% else %}ba{% endif %}">
+                        {{ l.get_status_display }}
+                    </span>
+                    {% if l.reviewed_by %}
+                    <div style="font-size: 9px; color: var(--color-text-secondary); margin-top: 2px;">par {{ l.reviewed_by }}</div>
+                    {% endif %}
+                </td>
+                {% if active_role == 'admin' %}
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        {% if l.status == 'PENDING' %}
+                        <button class="btn" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #E1F5EE; color: #0F6E56; border: 1px solid #D1E7DD;"
+                                hx-get="{% url 'review_leave' l.id 'approve' %}"
+                                hx-swap="none"
+                                title="Approuver">
+                            <i class="ti ti-check" style="font-size: 14px;"></i>
+                        </button>
+                        <button class="btn" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #FAECE7; color: #993C1D; border: 1px solid #F8D7DA;"
+                                hx-get="{% url 'review_leave' l.id 'reject' %}"
+                                hx-swap="none"
+                                title="Rejeter">
+                            <i class="ti ti-x" style="font-size: 14px;"></i>
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; background: #FAEBEB; color: #A32D2D; border: 1px solid #F8D7DA;"
+                                hx-get="{% url 'delete_leave' l.id %}"
+                                hx-swap="none"
+                                hx-confirm="Confirmer la suppression de cette demande de congé ?">
+                            <i class="ti ti-trash" style="font-size: 14px;"></i>
+                        </button>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">Aucun congé ou absence enregistré.</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleAddLeaveForm() {
+        const form = document.getElementById('addLeaveFormContainer');
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+</script>

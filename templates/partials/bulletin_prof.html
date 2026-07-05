@@ -1,0 +1,52 @@
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <form id="bulletinProfFilterForm" hx-get="{% url 'load_panel' 'bulletinProf' %}" hx-target="#mainContent" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <select id="bulletinProfClassSelect" name="class_id" style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);" hx-get="{% url 'load_panel' 'bulletinProf' %}" hx-target="#mainContent" hx-include="#bulletinProfFilterForm">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="term" style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);" hx-get="{% url 'load_panel' 'bulletinProf' %}" hx-target="#mainContent" hx-include="#bulletinProfFilterForm">
+            {% for t in term_range %}
+            <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>Trimestre {{ t }}</option>
+            {% endfor %}
+        </select>
+        {% if selected_class_id %}
+        <button type="button" class="btn btn-primary" style="margin-left: auto;" onclick="alert('Génération globale terminée avec succès.')"><i class="ti ti-file-export" aria-hidden="true"></i> Générer bulletins</button>
+        {% endif %}
+    </form>
+</div>
+
+{% if selected_class_id %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Élève</th>
+                <th>Note Maths</th>
+                <th>Rang Maths</th>
+                <th>Appréciation saisie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bul in bulletins %}
+            <tr>
+                <td style="font-weight: 600; color: var(--color-text-primary);">{{ bul.name }}</td>
+                {% if bul.avg >= 15 %}
+                <td style="font-weight: 600; color: #1D9E75;">{{ bul.avg }}/20</td>
+                {% else %}
+                <td style="font-weight: 600; color: var(--color-primary);">{{ bul.avg }}/20</td>
+                {% endif %}
+                <td>{{ bul.rank }}</td>
+                <td><input type="text" value="{{ bul.remark }}" style="width: 100%; font-size: 11px; padding: 4px 8px;"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-file-report" aria-hidden="true" style="font-size: 32px;"></i>
+    Veuillez choisir une classe pour afficher les bulletins.
+</div>
+{% endif %}

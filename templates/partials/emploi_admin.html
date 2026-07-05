@@ -1,0 +1,130 @@
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <form id="emploiFilterForm" hx-get="{% url 'load_panel' 'emploiAdmin' %}" hx-target="#mainContent" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <select name="class_id" id="emploiAdminClassSelect" style="font-size: 12px; height: 35px; border-radius: var(--border-radius-sm);" hx-get="{% url 'load_panel' 'emploiAdmin' %}" hx-target="#mainContent">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        
+        {% if selected_class_id %}
+        <button type="button" class="btn btn-primary" onclick="toggleAddForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un cours</button>
+        <button type="button" class="btn" data-url="{% url 'print_schedule' selected_class_id %}" onclick="window.open(this.dataset.url, '_blank')"><i class="ti ti-download" aria-hidden="true"></i> Exporter PDF</button>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Inline Form to Add Course Schedule (hidden by default) -->
+{% if selected_class_id %}
+<div id="addScheduleFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary);">
+    <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <i class="ti ti-plus" aria-hidden="true"></i> Ajouter un nouveau cours à l'emploi du temps
+    </h3>
+    <form hx-post="{% url 'add_class_schedule' %}" hx-target="#addScheduleResult" hx-swap="innerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Matière *</label>
+                <select name="subject_id" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    {% for sub in subjects %}
+                    <option value="{{ sub.id }}">{{ sub.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Enseignant *</label>
+                <select name="teacher_id" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}">{{ t.user.get_full_name|default:t.user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Jour *</label>
+                <select name="day_of_week" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);">
+                    <option value="1">Lundi</option>
+                    <option value="2">Mardi</option>
+                    <option value="3">Mercredi</option>
+                    <option value="4">Jeudi</option>
+                    <option value="5">Vendredi</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Créneau Horaire *</label>
+                <select id="timeSlotSelect" required style="width: 100%; height: 35px; border-radius: var(--border-radius-sm);" onchange="updateTimes()">
+                    <option value="08:00:00-10:00:00">08h - 10h</option>
+                    <option value="10:00:00-12:00:00">10h - 12h</option>
+                    <option value="14:00:00-16:00:00">14h - 16h</option>
+                </select>
+                <input type="hidden" name="start_time" id="startTimeInput" value="08:00:00">
+                <input type="hidden" name="end_time" id="endTimeInput" value="10:00:00">
+            </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Salle</label>
+                <input type="text" name="room" placeholder="ex: Salle 12" style="width: 100%; height: 35px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border-tertiary); padding: 0 8px;">
+            </div>
+        </div>
+        <div id="addScheduleResult"></div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
+            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+{% if selected_class_id %}
+<div class="table-wrap" style="overflow-x: auto;">
+    <table style="min-width: 500px; text-align: center;">
+        <thead>
+            <tr>
+                <th style="width: 80px; text-align: center;">Horaire</th>
+                <th style="text-align: center;">Lundi</th>
+                <th style="text-align: center;">Mardi</th>
+                <th style="text-align: center;">Mercredi</th>
+                <th style="text-align: center;">Jeudi</th>
+                <th style="text-align: center;">Vendredi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in schedule %}
+            <tr>
+                <td style="font-size: 11.5px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-background-tertiary);">
+                    {{ row.time }}
+                </td>
+                {% for s in row.days %}
+                {% if s == '—' %}
+                <td style="color: var(--color-text-tertiary); background: var(--color-background-tertiary);">—</td>
+                {% else %}
+                <td style="font-size: 10.5px; background: var(--color-primary-light); color: var(--color-primary); font-weight: 500;">
+                    {{ s }}
+                </td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-calendar" aria-hidden="true" style="font-size: 32px;"></i>
+    Veuillez choisir une classe pour afficher l'emploi du temps.
+</div>
+{% endif %}
+
+<script>
+    function toggleAddForm() {
+        const form = document.getElementById('addScheduleFormContainer');
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function updateTimes() {
+        const val = document.getElementById('timeSlotSelect').value;
+        const times = val.split('-');
+        document.getElementById('startTimeInput').value = times[0];
+        document.getElementById('endTimeInput').value = times[1];
+    }
+</script>

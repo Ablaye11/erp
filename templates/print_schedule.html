@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Emploi du temps - {{ class.name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            background-color: #fff;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+            padding: 40px;
+            background: #fff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .school-info h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+        }
+
+        .school-info p {
+            margin: 2px 0;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .title-block {
+            text-align: right;
+        }
+
+        .title-block h2 {
+            font-size: 18px;
+            color: #0f172a;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+        }
+
+        .title-block p {
+            margin: 2px 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #0f172a;
+        }
+
+        td {
+            padding: 20px 12px;
+            border: 1px solid #cbd5e1;
+            font-size: 12px;
+        }
+
+        .time-col {
+            font-weight: 700;
+            background-color: #f8fafc;
+            color: #475569;
+            width: 100px;
+        }
+
+        .course-card {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 8px;
+            font-weight: 500;
+        }
+
+        .empty-slot {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .container {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+        <button onclick="window.print()" style="background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+            Imprimer l'emploi du temps
+        </button>
+        <button onclick="window.close()" style="background: #e2e8f0; color: #334155; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; margin-left: 8px;">
+            Fermer
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="school-info">
+            <h1>{{ school_name }}</h1>
+            <p>Année Scolaire: <strong>{{ school_year }}</strong></p>
+        </div>
+        <div class="title-block">
+            <h2>EMPLOI DU TEMPS</h2>
+            <p>Classe: <strong>{{ class.name }}</strong></p>
+        </div>
+    </div>
+
+    <!-- Schedule Grid -->
+    <table>
+        <thead>
+            <tr>
+                <th>Horaire</th>
+                <th>Lundi</th>
+                <th>Mardi</th>
+                <th>Mercredi</th>
+                <th>Jeudi</th>
+                <th>Vendredi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in schedule %}
+            <tr>
+                <td class="time-col">{{ row.time }}</td>
+                {% for s in row.days %}
+                <td>
+                    {% if s == '—' %}
+                    <span class="empty-slot">—</span>
+                    {% else %}
+                    <div class="course-card">
+                        {{ s }}
+                    </div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 50px; font-size: 11px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        Généré le {{ today|date:"d/m/Y" }} par {{ school_name }}
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Mes classes</div>
+        <div class="stat-value">{{ classes_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Élèves au total</div>
+        <div class="stat-value">{{ students_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Appels effectués</div>
+        <div class="stat-value" style="color: #1D9E75;">100%</div>
+        <div class="stat-trend trend-up">Aujourd'hui</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Notes à saisir</div>
+        <div class="stat-value" style="color: #E24B4A;">0</div>
+        <div class="stat-trend trend-neu">Aucun délai en retard</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Mes classes -->
+    <div class="card">
+        <div class="section-title">Mes classes</div>
+        <div style="display: flex; flex-direction: column;">
+            {% for c in teacher_classes %}
+            <div class="paiement-row">
+                <div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">{{ c.name }}</div>
+                    <div style="font-size: 11px; color: var(--color-text-tertiary);">{{ c.students }} élèves</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; color: var(--color-primary);">{{ c.avg }}/20 moyenne</div>
+                    <div style="font-size: 11px; color: #1D9E75;">{{ c.pres }} présence</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding: 20px 0; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">
+                <i class="ti ti-school-off" style="font-size: 24px; display: block; margin-bottom: 6px;"></i>
+                Aucune classe assignée.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Mon agenda du jour -->
+    <div class="card">
+        <div class="section-title">Mon agenda du jour</div>
+        <div style="display: flex; flex-direction: column;">
+            {% for item in agenda %}
+            <div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--color-border-tertiary);">
+                <div style="font-size: 11px; color: var(--color-text-secondary); min-width: 45px; font-weight: 600;">{{ item.time }}</div>
+                <div style="font-size: 12px; color: var(--color-text-primary);">{{ item.title }}</div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding: 20px 0; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">
+                <i class="ti ti-calendar-event" style="font-size: 24px; display: block; margin-bottom: 6px;"></i>
+                Aucun cours prévu pour aujourd'hui.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 15px; padding: 18px;">
+    <div class="section-title" style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--color-text-primary);">
+        <i class="ti ti-chart-bar" style="color: var(--color-primary); font-size: 18px;"></i> Comparatif des Moyennes de Classe
+    </div>
+    <div style="height: 200px; position: relative; width: 100%;">
+        <canvas id="classesAvgChart"></canvas>
+    </div>
+</div>
+{{ classes_names|json_script:"classes-names-data" }}
+{{ classes_averages|json_script:"classes-averages-data" }}
+
+<script>
+    (function() {
+        const canvasEl = document.getElementById('classesAvgChart');
+        if (!canvasEl) return;
+        const ctx = canvasEl.getContext('2d');
+        
+        const names = JSON.parse(document.getElementById('classes-names-data').textContent);
+        const averages = JSON.parse(document.getElementById('classes-averages-data').textContent);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: names,
+                datasets: [{
+                    label: 'Moyenne de classe',
+                    data: averages,
+                    backgroundColor: 'rgba(83, 74, 183, 0.7)',
+                    borderColor: 'rgb(83, 74, 183)',
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 20,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    })();
+</script>

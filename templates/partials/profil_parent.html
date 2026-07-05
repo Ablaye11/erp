@@ -1,0 +1,119 @@
+<div style="margin-bottom:15px;">
+    <button class="btn" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px; background:var(--color-background-secondary); border:1px solid var(--color-border);"
+            hx-get="{% url 'load_panel' 'eleves' %}" hx-target="#mainContent"
+            onclick="document.getElementById('topbarTitle').textContent='Élèves'">
+        <i class="ti ti-arrow-left"></i> Retour aux élèves
+    </button>
+</div>
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom:15px; background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background-secondary) 100%); border-left: 5px solid var(--color-primary); display:flex; align-items:center; gap:20px; padding:20px;">
+    <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: var(--color-background-secondary); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; border: 3px solid var(--color-primary); box-shadow: var(--shadow-md); flex-shrink: 0;">
+        <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            {% if parent.user.avatar %}
+                <img src="{{ parent.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}
+                {{ parent.user.first_name|slice:":1" }}{{ parent.user.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        {% if active_role == 'admin' or request.user == parent.user %}
+        <form hx-post="{% url 'update_user_avatar' parent.user.id %}"
+              hx-encoding="multipart/form-data"
+              hx-target="#mainContent"
+              hx-swap="innerHTML"
+              style="position: absolute; bottom: -2px; right: -2px; margin: 0; z-index: 10;">
+            {% csrf_token %}
+            <label style="width: 26px; height: 26px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-background-secondary); box-shadow: var(--shadow-sm); transition: transform 0.2s;" 
+                   title="Modifier la photo"
+                   onmouseover="this.style.transform='scale(1.1)'"
+                   onmouseout="this.style.transform='scale(1)'">
+                <i class="ti ti-camera" style="font-size: 13px;"></i>
+                <input type="file" name="avatar" accept="image/*" style="display: none;" onchange="htmx.trigger(this.form, 'submit')">
+            </label>
+        </form>
+        {% if parent.user.avatar %}
+        <button type="button" 
+                hx-post="{% url 'update_user_avatar' parent.user.id %}"
+                hx-vals='{"delete_avatar": "1"}'
+                hx-target="#mainContent"
+                hx-confirm="Supprimer la photo de profil ?"
+                style="position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; background: #A32D2D; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-background-secondary); cursor: pointer; padding: 0; z-index: 10;"
+                title="Supprimer la photo">
+            <i class="ti ti-x" style="font-size: 11px; font-weight: bold;"></i>
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div>
+        <h2 style="font-size: 18px; font-weight:700; color:var(--color-text-primary); margin-bottom:4px;">{{ parent.user.get_full_name }}</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span class="badge bp" style="font-size: 11px; padding:3px 8px;">Parent / Tuteur</span>
+            <span style="font-size: 11.5px; color: var(--color-text-secondary);">Enfants à charge : <strong>{{ children|length }}</strong></span>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Left Column: Parent Details -->
+    <div>
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-id"></i> Coordonnées de contact
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Nom d'utilisateur :</span>
+                    <strong style="color:var(--color-text-primary);">@{{ parent.user.username }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Téléphone :</span>
+                    <strong style="color:var(--color-text-primary);">{{ parent.phone }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Adresse Email :</span>
+                    <strong style="color:var(--color-text-primary);">{{ parent.user.email|default:"Non renseigné" }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
+                    <span style="color:var(--color-text-secondary);">Adresse de domicile :</span>
+                    <strong style="color:var(--color-text-primary); text-align:right;">{{ parent.address }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Children List -->
+    <div>
+        <div class="card">
+            <h3 style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--color-text-primary); display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--color-border); padding-bottom:8px;">
+                <i class="ti ti-users"></i> Enfants inscrits
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                {% for child in children %}
+                <div style="display:flex; align-items:center; justify-content:space-between; background:var(--color-background-primary); border:1px solid var(--color-border); padding:10px; border-radius:var(--border-radius-sm);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight:700; font-size:11px; overflow:hidden;">
+                            {% if child.user.avatar %}
+                                <img src="{{ child.user.avatar.url }}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+                            {% else %}
+                                {{ child.user.first_name|slice:":1" }}{{ child.user.last_name|slice:":1" }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-size:12px; font-weight:600; color:var(--color-text-primary);">{{ child.user.get_full_name }}</div>
+                            <div style="font-size:10px; color:var(--color-text-tertiary);">Matricule: {{ child.registration_number }} · {{ child.class_room.name|default:"—" }}</div>
+                        </div>
+                    </div>
+                    <button class="btn" style="padding:4px 8px; font-size:10px; background:#E6F1FB; color:#185FA5; border:1px solid #BEE3F8;"
+                            hx-get="{% url 'view_student_profile' child.id %}" hx-target="#mainContent"
+                            onclick="document.getElementById('topbarTitle').textContent='Profil Élève'"
+                            title="Voir la fiche">
+                        <i class="ti ti-eye"></i> Fiche élève
+                    </button>
+                </div>
+                {% empty %}
+                <div style="padding:15px; text-align:center; color:var(--color-text-tertiary);">Aucun enfant lié à ce compte parent.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,199 @@
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Élèves inscrits</div>
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-trend trend-up"><i class="ti ti-trending-up" aria-hidden="true"></i> +12 cette année</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Taux de présence</div>
+        <div class="stat-value">{{ att_pct }}%</div>
+        <div class="stat-trend trend-up"><i class="ti ti-trending-up" aria-hidden="true"></i> +2% vs hier</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Paiements en attente</div>
+        <div class="stat-value">{{ pending_count }}</div>
+        <div class="stat-trend trend-down"><i class="ti ti-alert-circle" aria-hidden="true"></i> {{ pending_amount|floatformat:0 }} FCFA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Bulletins générés</div>
+        <div class="stat-value">{{ bulletins_generated }}</div>
+        <div class="stat-trend trend-neu">sur {{ total_students }} élèves</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Results by level -->
+    <div class="card">
+        <div class="section-title">
+            Résultats par niveau 
+            <span class="section-action" hx-get="{% url 'load_panel' 'bulletins' %}" hx-target="#mainContent" onclick="document.getElementById('topbarTitle').textContent='Bulletins'">Voir tout</span>
+        </div>
+        {% for stat in level_stats %}
+        <div style="margin-bottom: 11px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-primary);">
+                <span>{{ stat.level }}</span>
+                <span style="font-weight: 600; color: var(--color-primary);">{{ stat.score }}/20</span>
+            </div>
+            <div class="note-bar">
+                <div class="note-fill" data-style-width="{{ stat.pct }}%" style="background: var(--color-primary);"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Alerts -->
+    <div class="card">
+        <div class="section-title">
+            Alertes 
+            <span class="notif-badge" style="position: static; width: 18px; height: 18px; border-radius: 50%; background: #E24B4A; color: #fff; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; box-shadow: 0 0 4px #E24B4A;">
+                {{ alerts|length }}
+            </span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            {% for alert in alerts %}
+            <div class="alert-item">
+                <div class="alert-dot" data-style-background="{% if alert.notification_type == 'ALERT' %}#E24B4A{% else %}#854F0B{% endif %}"></div>
+                <div>
+                    <div style="font-size: 12px; color: var(--color-text-primary); font-weight: 600;">{{ alert.title }}</div>
+                    <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">{{ alert.message }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding: 10px 0;">Aucune alerte en cours.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Section Graphiques -->
+<div class="section-title">Aperçu analytique de l'établissement</div>
+<div class="three-col" style="margin-bottom: 20px;">
+    <!-- Chart 1: Average by Level -->
+    <div class="card" style="padding: 15px; background: var(--color-background-secondary); border-radius: var(--border-radius-lg);">
+        <h4 style="font-size: 12.5px; margin-bottom: 10px; color: var(--color-text-secondary); text-align: center;">Moyennes par niveau</h4>
+        <div style="height: 180px; position: relative; width: 100%;">
+            <canvas id="levelChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Chart 2: Attendance Breakdown -->
+    <div class="card" style="padding: 15px; background: var(--color-background-secondary); border-radius: var(--border-radius-lg);">
+        <h4 style="font-size: 12.5px; margin-bottom: 10px; color: var(--color-text-secondary); text-align: center;">Taux de présence global</h4>
+        <div style="height: 180px; position: relative; width: 100%;">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Financial Evolution -->
+    <div class="card" style="padding: 15px; background: var(--color-background-secondary); border-radius: var(--border-radius-lg);">
+        <h4 style="font-size: 12.5px; margin-bottom: 10px; color: var(--color-text-secondary); text-align: center;">Évolution des encaissements</h4>
+        <div style="height: 180px; position: relative; width: 100%;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        fetch('{% url "dashboard_stats_api" %}')
+            .then(res => res.json())
+            .then(data => {
+                // 1. Level Chart (Bar)
+                const ctxLevel = document.getElementById('levelChart').getContext('2d');
+                new Chart(ctxLevel, {
+                    type: 'bar',
+                    data: {
+                        labels: data.levels,
+                        datasets: [{
+                            label: 'Moyenne générale',
+                            data: data.averages,
+                            backgroundColor: 'rgba(83, 74, 183, 0.65)',
+                            borderColor: 'rgb(83, 74, 183)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { min: 0, max: 20, grid: { color: 'rgba(0, 0, 0, 0.05)' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+
+                // 2. Attendance Chart (Doughnut)
+                const ctxAtt = document.getElementById('attendanceChart').getContext('2d');
+                new Chart(ctxAtt, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Présents', 'Retards', 'Absents'],
+                        datasets: [{
+                            data: data.attendance,
+                            backgroundColor: ['#1d9e75', '#f59e0b', '#e24b4a'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#475569', boxWidth: 12, font: { size: 10 } }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+
+                // 3. Revenue Chart (Line)
+                const ctxRev = document.getElementById('revenueChart').getContext('2d');
+                new Chart(ctxRev, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jui', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+                        datasets: [{
+                            label: 'Encaissements (FCFA)',
+                            data: data.revenue,
+                            borderColor: '#1d5fa5',
+                            backgroundColor: 'rgba(29, 95, 165, 0.1)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: 'rgba(0, 0, 0, 0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+                        }
+                    }
+                });
+            });
+    })();
+</script>
+
+<!-- Attendance today -->
+<div class="section-title">Présences aujourd'hui par classe</div>
+<div class="three-col">
+    {% for c in class_attendance %}
+    <div style="padding: 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--color-text-primary);">{{ c.class }}</span>
+            <span class="badge {{ c.badge }}">{{ c.pct }}</span>
+        </div>
+        <div style="font-size: 11px; color: var(--color-text-secondary);">{{ c.present_str }} présents</div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.querySelectorAll('[data-style-width]').forEach(el => el.style.width = el.getAttribute('data-style-width'));
+    document.querySelectorAll('[data-style-background]').forEach(el => el.style.background = el.getAttribute('data-style-background'));
+</script>

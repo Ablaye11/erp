@@ -1,0 +1,200 @@
+<!-- Saisir Notes avec filtres HTMX corrigés -->
+<div style="background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <!-- Classe -->
+        <select name="class_id" id="notesClassId"
+                hx-get="{% url 'load_panel' 'saisirNotes' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="#notesSubjectId, #notesTerm, #notesGradeType, #notesDevoirNum"
+                style="font-size: 12px;">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        
+        <!-- Matière -->
+        <select name="subject_id" id="notesSubjectId"
+                hx-get="{% url 'load_panel' 'saisirNotes' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="#notesClassId, #notesTerm, #notesGradeType, #notesDevoirNum"
+                style="font-size: 12px;">
+            <option value="">-- Matière --</option>
+            {% for sub in subjects %}
+            <option value="{{ sub.id }}" {% if selected_subject_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+            {% endfor %}
+        </select>
+        
+        <!-- Trimestre -->
+        <select name="term" id="notesTerm"
+                hx-get="{% url 'load_panel' 'saisirNotes' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="#notesClassId, #notesSubjectId, #notesGradeType, #notesDevoirNum"
+                style="font-size: 12px;">
+            {% for t in term_range %}
+            <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>Trimestre {{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Type d'évaluation -->
+        <select name="grade_type" id="notesGradeType"
+                hx-get="{% url 'load_panel' 'saisirNotes' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="#notesClassId, #notesSubjectId, #notesTerm, #notesDevoirNum"
+                style="font-size: 12px;">
+            <option value="DEVOIR" {% if grade_type == 'DEVOIR' %}selected{% endif %}>Devoir</option>
+            <option value="COMPOSITION" {% if grade_type == 'COMPOSITION' %}selected{% endif %}>Composition</option>
+        </select>
+
+        <!-- Numéro de devoir (affiché seulement si type est DEVOIR) -->
+        <select name="devoir_num" id="notesDevoirNum"
+                hx-get="{% url 'load_panel' 'saisirNotes' %}"
+                hx-target="#mainContent"
+                hx-trigger="change"
+                hx-include="#notesClassId, #notesSubjectId, #notesTerm, #notesGradeType"
+                data-style-display="{% if grade_type == 'COMPOSITION' %}none{% else %}inline-block{% endif %}"
+                style="font-size: 12px;">
+            <option value="1" {% if devoir_num == 1 %}selected{% endif %}>Devoir 1</option>
+            <option value="2" {% if devoir_num == 2 %}selected{% endif %}>Devoir 2</option>
+            <option value="3" {% if devoir_num == 3 %}selected{% endif %}>Devoir 3</option>
+            <option value="4" {% if devoir_num == 4 %}selected{% endif %}>Devoir 4</option>
+        </select>
+        
+        {% if selected_class_id %}
+        <span class="badge bp" style="margin-left: auto;">
+            {{ students|length }} élèves
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+{% if selected_class_id %}
+<div id="gradesResult"></div>
+
+<form hx-post="{% url 'save_grades' %}" hx-target="#gradesResult" hx-swap="afterbegin">
+    {% csrf_token %}
+    <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+    <input type="hidden" name="subject_id" value="{{ selected_subject_id|default:'' }}">
+    <input type="hidden" name="term" value="{{ selected_term|default:2 }}">
+    <input type="hidden" name="grade_type" value="{{ grade_type|default:'DEVOIR' }}">
+    <input type="hidden" name="devoir_num" value="{{ devoir_num|default:1 }}">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary);">
+            <i class="ti ti-pencil" style="color:var(--color-primary);"></i>
+            Saisie des notes : 
+            <span style="color: var(--color-primary);">
+                {% if grade_type == 'DEVOIR' %}Devoir n°{{ devoir_num }}{% else %}Composition{% endif %}
+            </span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            {% if grade_type == 'DEVOIR' %}
+            <!-- Case à cocher : Compter dans le bulletin -->
+            <label for="countInBulletin" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:var(--color-text-secondary); cursor:pointer; background:var(--color-background-tertiary); border:1px solid var(--color-border-secondary); border-radius:6px; padding:5px 10px; user-select:none;" title="Si coché, ce devoir sera inclus dans le calcul de la moyenne du bulletin trimestriel">
+                <input type="checkbox" id="countInBulletin" name="count_in_bulletin"
+                       style="width:14px; height:14px; accent-color:var(--color-primary); cursor:pointer;"
+                       {% if devoir_count_in_bulletin %}checked{% endif %}>
+                <i class="ti ti-report" style="font-size:13px;"></i>
+                Compter dans le bulletin
+            </label>
+            {% else %}
+            <!-- Les compositions comptent toujours -->
+            <span style="font-size:11px; color:#0F6E56; background:#E1F5EE; border-radius:6px; padding:4px 10px; font-weight:500;">
+                <i class="ti ti-check"></i> Composition — compte toujours
+            </span>
+            {% endif %}
+            <button type="button" class="btn" onclick="clearAllGrades()" style="font-size:11px;">
+                <i class="ti ti-eraser"></i> Effacer tout
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Élève</th>
+                    <th style="width:100px;">Note /20</th>
+                    <th style="width:130px;">Appréciation</th>
+                    <th>Commentaire / Appréciation bulletin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:26px; height:26px; border-radius:50%; background:var(--color-primary-light); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600;">
+                                {{ s.user.first_name|slice:":1" }}{{ s.user.last_name|slice:":1" }}
+                            </div>
+                            <span style="font-weight: 600; color: var(--color-text-primary);">{{ s.user.get_full_name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="number" step="0.25" min="0" max="20" 
+                               name="grade_{{ s.id }}" 
+                               id="grade_{{ s.id }}"
+                               data-sid="{{ s.id }}"
+                               value="{{ s.existing_score_str }}"
+                               placeholder="—" 
+                               style="width: 70px; font-size: 12px; padding: 4px 8px;"
+                               oninput="updateAppreciation(this.dataset.sid, this.value)">
+                    </td>
+                    <td id="appr_{{ s.id }}" style="font-size: 11px; color: var(--color-text-secondary); font-weight: 500;">—</td>
+                    <td>
+                        <input type="text" name="comment_{{ s.id }}" value="{{ s.existing_comment }}" placeholder="Commentaire..." 
+                               style="width: 100%; font-size: 11px; padding: 4px 8px;">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 6px; display:flex; align-items:center; gap:4px;">
+    <i class="ti ti-info-circle" aria-hidden="true"></i>
+    Les appréciations sont calculées automatiquement. Barème : ≥16 Très bien · ≥14 Bien · ≥12 Assez bien · ≥10 Passable · &lt;10 Insuffisant
+</div>
+
+<script>
+function updateAppreciation(studentId, val) {
+    const apprEl = document.getElementById('appr_' + studentId);
+    if (!val || val === '') { apprEl.textContent = '—'; return; }
+    const v = parseFloat(val);
+    if (v >= 16) apprEl.innerHTML = '<span style="color:#1D9E75;font-weight:600;">Très bien</span>';
+    else if (v >= 14) apprEl.innerHTML = '<span style="color:#185FA5;font-weight:600;">Bien</span>';
+    else if (v >= 12) apprEl.innerHTML = '<span style="color:var(--color-primary);font-weight:600;">Assez bien</span>';
+    else if (v >= 10) apprEl.innerHTML = '<span style="color:#854F0B;font-weight:600;">Passable</span>';
+    else apprEl.innerHTML = '<span style="color:#A32D2D;font-weight:600;">Insuffisant</span>';
+}
+function clearAllGrades() {
+    document.querySelectorAll('input[id^="grade_"]').forEach(i => {
+        i.value = '';
+        const sid = i.id.replace('grade_', '');
+        document.getElementById('appr_' + sid).textContent = '—';
+    });
+}
+
+// Initialiser les appréciations pour les notes existantes et appliquer les styles d'affichage
+document.querySelectorAll('[data-style-display]').forEach(el => el.style.display = el.getAttribute('data-style-display'));
+document.querySelectorAll('input[id^="grade_"]').forEach(i => {
+    if (i.value) {
+        updateAppreciation(i.dataset.sid, i.value);
+    }
+});
+</script>
+
+{% else %}
+<div class="empty-state">
+    <i class="ti ti-edit" aria-hidden="true" style="font-size: 32px;"></i>
+    Veuillez sélectionner une classe et une matière pour commencer la saisie.
+</div>
+{% endif %}

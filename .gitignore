@@ -1,0 +1,43 @@
+# ===========================================================================
+# .gitignore — École Al-Nour ERP
+# ===========================================================================
+
+# Fichier de configuration sensible — NE JAMAIS commiter
+.env
+
+# Base de données locale SQLite
+db.sqlite3
+
+# Environnement virtuel Python
+venv/
+env/
+.venv/
+
+# Fichiers médias uploadés (justificatifs, avatars, etc.)
+media/
+
+# Fichiers statiques collectés (générés par collectstatic)
+staticfiles/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Logs
+*.log
+
+# Fichiers IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Migrations de test
+*/migrations/test_*.py
+
+# OS
+.DS_Store
+Thumbs.db
