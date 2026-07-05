@@ -264,93 +264,6 @@
             transform: translateX(3px);
         }
 
-        /* Demo helper */
-        .login-demo {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(16px);
-            border-radius: var(--radius-lg);
-            padding: 18px 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .login-demo h3 {
-            font-family: 'Outfit', sans-serif;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 12px;
-        }
-
-        .login-demo h3 code {
-            background: rgba(83, 74, 183, 0.3);
-            color: #a99ef8;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 10px;
-        }
-
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .demo-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            transition: background 0.2s, border-color 0.2s, transform 0.15s;
-            text-align: left;
-        }
-
-        .demo-btn:hover {
-            background: rgba(255, 255, 255, 0.09);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .demo-btn:active {
-            transform: scale(0.98);
-        }
-
-        .demo-role {
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 2px 6px;
-            border-radius: 4px;
-            letter-spacing: 0.06em;
-            display: inline-block;
-        }
-
-        .role-admin   { background: rgba(83, 74, 183, 0.2); color: #a99ef8; }
-        .role-teacher { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-        .role-student { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
-        .role-parent  { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
-
-        .demo-username {
-            font-size: 13px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.85);
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .demo-tip {
-            margin-top: 10px;
-            font-size: 10.5px;
-            color: rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         /* Responsive */
         @media (max-width: 480px) {
             .login-card { padding: 24px 18px; }
@@ -403,7 +316,7 @@
                         name="username"
                         id="id_username"
                         required
-                        placeholder="Ex: diop, fall_amadou..."
+                        placeholder="Nom d'utilisateur"
                         autocomplete="username"
                         autofocus
                     >
@@ -431,45 +344,10 @@
             </form>
         </div>
 
-        <!-- Comptes de démo -->
-        <div class="login-demo">
-            <h3>🔑 Comptes démo — mot de passe : <code>pass123</code></h3>
-            <div class="demo-grid">
-                <button class="demo-btn" onclick="fillLogin('diop', 'pass123')" type="button">
-                    <span class="demo-role role-admin">👔 Admin</span>
-                    <span class="demo-username">diop</span>
-                </button>
-                <button class="demo-btn" onclick="fillLogin('fall_amadou', 'pass123')" type="button">
-                    <span class="demo-role role-teacher">📚 Prof</span>
-                    <span class="demo-username">fall_amadou</span>
-                </button>
-                <button class="demo-btn" onclick="fillLogin('sarr_kofi', 'pass123')" type="button">
-                    <span class="demo-role role-student">🎓 Élève</span>
-                    <span class="demo-username">sarr_kofi</span>
-                </button>
-                <button class="demo-btn" onclick="fillLogin('sarr_awa', 'pass123')" type="button">
-                    <span class="demo-role role-parent">👨‍👩‍👧 Parent</span>
-                    <span class="demo-username">sarr_awa</span>
-                </button>
-            </div>
-            <p class="demo-tip">
-                <i class="ti ti-info-circle"></i>
-                Cliquez sur un compte pour remplir automatiquement les champs.
-            </p>
-        </div>
+
     </div>
 
     <script>
-        function fillLogin(user, pass) {
-            document.getElementById('id_username').value = user;
-            document.getElementById('id_password').value = pass;
-            // Petit effet visuel
-            document.getElementById('id_password').style.borderColor = 'rgba(83, 74, 183, 0.7)';
-            setTimeout(() => {
-                document.getElementById('id_password').style.borderColor = '';
-            }, 600);
-        }
-
         // Animation sur le bouton au submit
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
