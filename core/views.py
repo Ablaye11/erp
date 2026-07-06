@@ -4298,7 +4298,7 @@ def edit_staff_view(request, pk):
 
     staff = get_object_or_404(AdminProfile, pk=pk)
 
-    POSITIONS = ['Directeur', 'Secrétaire', 'Comptable', 'Agent d\'entretien', 'Autre']
+    POSITIONS = ['Directeur', 'Secrétaire', 'Comptable', 'Surveillant', 'Agent d\'entretien', 'Autre']
 
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
