@@ -502,11 +502,11 @@ def load_panel_view(request, panel_name):
     elif panel_name == 'bulletins':
         classes = SchoolClass.objects.all()
         selected_class_id = request.GET.get('class_id')
-        term = request.GET.get('term', '2')
+        term = request.GET.get('term', '1')
         try:
             term = int(term)
         except ValueError:
-            term = 2
+            term = 1
             
         selected_class = None
         bulletins_list = []
@@ -942,11 +942,11 @@ def load_panel_view(request, panel_name):
         selected_class_id = request.GET.get('class_id')
         selected_subject_id = request.GET.get('subject_id')
         
-        selected_term = request.GET.get('term')
+        selected_term = request.GET.get('term', '1')
         try:
             selected_term = int(selected_term)
         except (ValueError, TypeError):
-            selected_term = 2
+            selected_term = 1
 
         grade_type = request.GET.get('grade_type', 'DEVOIR')
         devoir_num_str = request.GET.get('devoir_num', '1')
@@ -1202,18 +1202,17 @@ def load_panel_view(request, panel_name):
             student_prof = StudentProfile.objects.first()
             
         active_year = SchoolSettings.get().school_year
-        term = 2 # default term
+        term = 1 # default term to Trimestre 1
         
+        avg = "0.0"
+        rank_str = "—"
         if student_prof:
             class_room = student_prof.class_room
-            if class_room:
-                term = class_room.nb_trimestres or 3
             
             avg = get_student_term_average(student_prof, term, active_year)
             avg = round(avg, 1) if avg > 0 else "0.0"
             
             # Rank
-            rank_str = "—"
             if class_room:
                 class_ranks = get_class_rankings(class_room, term, active_year)
                 s_rank_info = class_ranks.get(student_prof.id)
@@ -1657,7 +1656,7 @@ def load_panel_view(request, panel_name):
             
         if child:
             child_name = f"{child.user.get_full_name() or child.user.username} — {child.class_room.name if child.class_room else 'Sans classe'}"
-            term = child.class_room.nb_trimestres if child.class_room else 3
+            term = 1
             
             # Child stats
             average = get_student_term_average(child, term, active_year)
@@ -2189,11 +2188,11 @@ def delete_teacher_view(request, pk):
 
 @login_required
 def print_bulletin_view(request, student_id):
-    term = request.GET.get('term', '2')
+    term = request.GET.get('term', '1')
     try:
         term = int(term)
     except ValueError:
-        term = 2
+        term = 1
         
     student_prof = get_object_or_404(StudentProfile, id=student_id)
     student_name = student_prof.user.get_full_name() or student_prof.user.username
@@ -2346,11 +2345,11 @@ def print_bulletin_view(request, student_id):
 @login_required
 @require_POST
 def send_bulletin_parent_view(request, student_id):
-    term = request.GET.get('term', '2')
+    term = request.GET.get('term', '1')
     try:
         term = int(term)
     except ValueError:
-        term = 2
+        term = 1
         
     student_prof = get_object_or_404(StudentProfile, id=student_id)
     parent = student_prof.parent
@@ -2936,11 +2935,11 @@ def export_grades_excel_view(request):
     """Exporte les notes des élèves en Excel par classe et trimestre."""
     import openpyxl
     class_id = request.GET.get('class_id')
-    term = request.GET.get('term', '2')
+    term = request.GET.get('term', '1')
     try:
         term = int(term)
     except ValueError:
-        term = 2
+        term = 1
         
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -3823,11 +3822,11 @@ def view_student_profile_view(request, pk):
         return HttpResponse('Accès refusé', status=403)
         
     current_school_year = SchoolSettings.get().school_year
-    term = request.GET.get('term', '2')
+    term = request.GET.get('term', '1')
     try:
         term = int(term)
     except ValueError:
-        term = 2
+        term = 1
         
     # Calcul du nb de trimestres de la classe de l'élève
     nb_trimestres = student.class_room.nb_trimestres if student.class_room else 3
