@@ -2334,6 +2334,7 @@ def add_staff_view(request):
     username = request.POST.get('username', '').strip()
     email = request.POST.get('email', '').strip()
     position = request.POST.get('position', 'Secrétaire').strip()
+    phone    = request.POST.get('phone', '').strip()
     
     if not all([first_name, last_name, username]):
         return HttpResponse(
@@ -2352,7 +2353,7 @@ def add_staff_view(request):
         )
         admin_profile, _ = AdminProfile.objects.update_or_create(
             user=user,
-            defaults={'position': position}
+            defaults={'position': position, 'phone': phone}
         )
         
         # Audit logging
@@ -4353,6 +4354,7 @@ def edit_staff_view(request, pk):
 
         if position:
             staff.position = position
+        staff.phone = request.POST.get('phone', '').strip()
         staff.save()
 
         from core.utils import log_audit

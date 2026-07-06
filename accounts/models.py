@@ -68,6 +68,7 @@ class TeacherProfile(models.Model):
 class AdminProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={'role': 'ADMIN'}, related_name='admin_profile')
     position = models.CharField(max_length=100, default="Directeur", verbose_name="Poste")
+    phone = models.CharField(max_length=20, blank=True, default="", verbose_name="Téléphone")
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username

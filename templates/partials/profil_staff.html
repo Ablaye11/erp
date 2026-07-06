@@ -89,13 +89,7 @@
         </div>
         <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--color-border); padding-bottom:4px;">
             <span style="color:var(--color-text-secondary);">Numéro de téléphone :</span>
-            <strong style="color:var(--color-text-primary);">
-                {% if staff.position == 'Directeur' %}77 000 0001
-                {% elif staff.position == 'Secrétaire' %}77 000 0002
-                {% elif staff.position == 'Comptable' %}77 000 0003
-                {% else %}77 000 0004
-                {% endif %}
-            </strong>
+            <strong style="color:var(--color-text-primary);">{{ staff.phone|default:"Non renseigné" }}</strong>
         </div>
         <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
             <span style="color:var(--color-text-secondary);">Statut d'activité :</span>

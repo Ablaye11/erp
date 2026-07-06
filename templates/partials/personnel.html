@@ -51,6 +51,10 @@
                     <option value="Autre">Autre</option>
                 </select>
             </div>
+            <div>
+                <label style="font-size: 10.5px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 3px;">Téléphone</label>
+                <input type="tel" name="phone" style="width: 100%;" placeholder="Ex: 77 000 00 00">
+            </div>
         </div>
         <div id="addStaffResult"></div>
         <div style="display: flex; gap: 8px;">
@@ -106,13 +110,7 @@
                     {% else %}Général
                     {% endif %}
                 </td>
-                <td style="color: var(--color-text-secondary);">
-                    {% if adm.position == 'Directeur' %}77 000 0001
-                    {% elif adm.position == 'Secrétaire' %}77 000 0002
-                    {% elif adm.position == 'Comptable' %}77 000 0003
-                    {% else %}77 000 0004
-                    {% endif %}
-                </td>
+                <td style="color: var(--color-text-secondary);">{{ adm.phone|default:"—" }}</td>
                 <td><span class="badge bg">Actif</span></td>
                 {% if active_role == 'admin' %}
                 <td style="text-align: right; display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
