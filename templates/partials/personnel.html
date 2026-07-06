@@ -1,11 +1,11 @@
 <div style="display: flex; gap: 8px; margin-bottom: 15px;">
     {% if active_role == 'admin' %}
-    <button class="btn btn-primary" onclick="toggleAddStaffForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un membre</button>
+    <button class="btn btn-primary" onclick="const form = document.getElementById('addStaffFormContainer'); form.style.display = form.style.display === 'none' ? 'block' : 'none';"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un membre</button>
     {% endif %}
 </div>
 
 <!-- Inline Form to Add Staff (hidden by default) -->
-<div id="addStaffFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary);">
+<div id="addStaffFormContainer" class="card" style="display: none; margin-bottom: 15px; border-left: 3px solid var(--color-primary); background: var(--color-background-tertiary); animation: none !important;">
     <h3 style="margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
         <i class="ti ti-user-plus" aria-hidden="true"></i> Ajouter un membre administratif
     </h3>
@@ -41,7 +41,7 @@
         <div id="addStaffResult"></div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
-            <button type="button" class="btn" onclick="toggleAddStaffForm()">Annuler</button>
+            <button type="button" class="btn" onclick="document.getElementById('addStaffFormContainer').style.display = 'none';">Annuler</button>
         </div>
     </form>
 </div>
@@ -129,9 +129,4 @@
     </table>
 </div>
 
-<script>
-    function toggleAddStaffForm() {
-        const form = document.getElementById('addStaffFormContainer');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-</script>
+
