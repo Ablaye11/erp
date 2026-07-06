@@ -8,7 +8,7 @@
         </select>
         
         {% if selected_class_id %}
-        <button type="button" class="btn btn-primary" onclick="toggleAddForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un cours</button>
+        <button type="button" class="btn btn-primary" onclick="const form = document.getElementById('addScheduleFormContainer'); if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un cours</button>
         <button type="button" class="btn" data-url="{% url 'print_schedule' selected_class_id %}" onclick="window.open(this.dataset.url, '_blank')"><i class="ti ti-download" aria-hidden="true"></i> Exporter PDF</button>
         {% endif %}
     </form>
@@ -69,7 +69,7 @@
         <div id="addScheduleResult"></div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
-            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+            <button type="button" class="btn" onclick="document.getElementById('addScheduleFormContainer').style.display = 'none';">Annuler</button>
         </div>
     </form>
 </div>
@@ -116,10 +116,7 @@
 {% endif %}
 
 <script>
-    function toggleAddForm() {
-        const form = document.getElementById('addScheduleFormContainer');
-        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
+
 
     function updateTimes() {
         const val = document.getElementById('timeSlotSelect').value;

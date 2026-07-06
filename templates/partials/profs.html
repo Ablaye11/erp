@@ -1,6 +1,6 @@
 <div style="display: flex; gap: 8px; margin-bottom: 15px;">
     {% if active_role == 'admin' %}
-    <button class="btn btn-primary" onclick="toggleAddForm()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un enseignant</button>
+    <button class="btn btn-primary" onclick="const form = document.getElementById('addTeacherFormContainer'); form.style.display = form.style.display === 'none' ? 'block' : 'none';"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un enseignant</button>
     {% endif %}
 </div>
 
@@ -32,7 +32,7 @@
         <div id="addTeacherResult"></div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
-            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+            <button type="button" class="btn" onclick="document.getElementById('addTeacherFormContainer').style.display = 'none';">Annuler</button>
         </div>
     </form>
 </div>
@@ -112,9 +112,4 @@
     </table>
 </div>
 
-<script>
-    function toggleAddForm() {
-        const form = document.getElementById('addTeacherFormContainer');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-</script>
+

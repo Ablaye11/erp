@@ -1,6 +1,6 @@
 <!-- Phase 2: Filtres corrigés pour les élèves avec HTMX include correct -->
 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-    <button class="btn btn-primary" onclick="toggleAddForm()">
+    <button class="btn btn-primary" onclick="const form = document.getElementById('addStudentFormContainer'); form.style.display = form.style.display === 'none' ? 'block' : 'none';">
         <i class="ti ti-plus" aria-hidden="true"></i> Nouvel élève
     </button>
     
@@ -72,7 +72,7 @@
         <div id="addStudentResult"></div>
         <div style="display: flex; gap: 8px;">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
-            <button type="button" class="btn" onclick="toggleAddForm()">Annuler</button>
+            <button type="button" class="btn" onclick="document.getElementById('addStudentFormContainer').style.display = 'none';">Annuler</button>
         </div>
     </form>
 </div>
@@ -174,21 +174,12 @@
     </table>
 </div>
 
-<script>
-    function toggleAddForm() {
-        const form = document.getElementById('addStudentFormContainer');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-    function toggleImportForm() {
-        const form = document.getElementById('importStudentsFormContainer');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-</script>
+
 
 {% if active_role == 'admin' %}
 <!-- Import CSV Form -->
 <div style="margin-top: 15px;">
-    <button class="btn" onclick="toggleImportForm()" style="font-size: 11px;">
+    <button class="btn" onclick="const form = document.getElementById('importStudentsFormContainer'); form.style.display = form.style.display === 'none' ? 'block' : 'none';" style="font-size: 11px;">
         <i class="ti ti-upload" aria-hidden="true"></i> Importer via CSV
     </button>
 </div>
@@ -205,7 +196,7 @@
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <input type="file" name="csv_file" accept=".csv" required style="font-size: 12px;">
             <button type="submit" class="btn btn-primary" style="font-size: 12px;"><i class="ti ti-upload" aria-hidden="true"></i> Importer</button>
-            <button type="button" class="btn" onclick="toggleImportForm()" style="font-size: 12px;">Annuler</button>
+            <button type="button" class="btn" onclick="document.getElementById('importStudentsFormContainer').style.display = 'none';" style="font-size: 12px;">Annuler</button>
         </div>
         <div id="importStudentsResult" style="margin-top: 10px;"></div>
     </form>
