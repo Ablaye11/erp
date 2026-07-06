@@ -80,14 +80,14 @@ def get_student_term_average(student, term, school_year):
     if not subjects.exists():
         subjects = Subject.objects.all()
 
-    configs = {cfg.subject_id: float(cfg.coefficient) for cfg in ClassSubjectConfig.objects.filter(school_class=student.class_room)}
+    configs = {cfg.subject_id: float(cfg.coefficient or 1.0) for cfg in ClassSubjectConfig.objects.filter(school_class=student.class_room)}
 
     total_points = 0.0
     total_coef = 0.0
     for sub in subjects:
         details = get_student_subject_term_details(student, sub, term, school_year)
         if details['moyenne'] is not None:
-            coef = configs.get(sub.id, float(sub.coefficient))
+            coef = configs.get(sub.id, float(sub.coefficient or 1.0))
             total_points += details['moyenne'] * coef
             total_coef += coef
 
@@ -675,74 +675,89 @@ def load_panel_view(request, panel_name):
     elif panel_name == 'classement':
         classes = SchoolClass.objects.all()
         selected_class_id = request.GET.get('class_id')
-        selected_term = request.GET.get('term', '2')
+        selected_term = request.GET.get('term', '1')
         try:
             selected_term = int(selected_term)
         except ValueError:
-            selected_term = 2
+            selected_term = 1
 
         ranking = []
         selected_class = None
         term_range = range(1, 4)
         active_year = SchoolSettings.get().school_year
-        
-        if selected_class_id:
-            selected_class = get_object_or_404(SchoolClass, id=selected_class_id)
-            students = StudentProfile.objects.filter(class_room=selected_class).select_related('user')
-            term_range = range(1, (selected_class.nb_trimestres or 3) + 1)
-            
-            configs = {cfg.subject_id: float(cfg.coefficient) for cfg in ClassSubjectConfig.objects.filter(school_class=selected_class)}
-            class_ranks = get_class_rankings(selected_class, selected_term, active_year)
-            
-            # Précharger le nombre de notes pour tous les élèves de la classe
-            grade_counts = {}
 
-            if selected_term == 0:
-                grades_qs = Grade.objects.filter(student__class_room=selected_class, school_year=active_year)
-            else:
-                grades_qs = Grade.objects.filter(student__class_room=selected_class, term=selected_term, school_year=active_year)
-            
-            for gc in grades_qs.values('student_id').annotate(cnt=Count('id')):
-                grade_counts[gc['student_id']] = gc['cnt']
-                
-            # Précharger le nombre d'absences pour tous les élèves de la classe
-            absence_counts = {}
-            absences_qs = Attendance.objects.filter(student__class_room=selected_class, status='ABSENT', school_year=active_year)
-            for ac in absences_qs.values('student_id').annotate(cnt=Count('id')):
-                absence_counts[ac['student_id']] = ac['cnt']
-            
-            for s in students:
-                grade_count = grade_counts.get(s.id, 0)
-                    
-                if grade_count > 0:
-                    absences = absence_counts.get(s.id, 0)
-                    
-                    subjects = Subject.objects.filter(classes=selected_class).distinct()
-                    if not subjects.exists():
-                        subjects = Subject.objects.all()
-                    total_coef = sum(configs.get(sub.id, float(sub.coefficient)) for sub in subjects)
-                    
-                    s_rank_info = class_ranks.get(s.id, {'rank_num': len(students)})
-                    avg = s_rank_info.get('average', 0.0) if 'average' in s_rank_info else 0.0
-                    
-                    ranking.append({
-                        'student': s,
-                        'name': s.user.get_full_name() or s.user.username,
-                        'avg': avg,
-                        'absences': absences,
-                        'grade_count': grade_count,
-                        'total_coef': round(total_coef, 1),
-                        'rank': s_rank_info['rank_num'],
-                        'badge': 'bg' if avg >= 14 else ('bp' if avg >= 10 else 'ba'),
-                    })
-            ranking.sort(key=lambda x: x['avg'], reverse=True)
+        # Auto-select class for student/parent if not specified
+        if not selected_class_id:
+            try:
+                if active_role == 'eleve':
+                    class_room = request.user.student_profile.class_room
+                    if class_room:
+                        selected_class_id = str(class_room.id)
+                elif active_role == 'parent':
+                    child = request.user.parent_profile.children.first()
+                    if child and child.class_room:
+                        selected_class_id = str(child.class_room.id)
+            except Exception:
+                pass
+
+        if selected_class_id and selected_class_id.isdigit():
+            selected_class = SchoolClass.objects.filter(id=selected_class_id).first()
+            if selected_class:
+                students = StudentProfile.objects.filter(class_room=selected_class).select_related('user')
+                term_range = range(1, (selected_class.nb_trimestres or 3) + 1)
+
+                configs = {cfg.subject_id: float(cfg.coefficient or 1.0) for cfg in ClassSubjectConfig.objects.filter(school_class=selected_class)}
+                class_ranks = get_class_rankings(selected_class, selected_term, active_year)
+
+                # Précharger le nombre de notes pour tous les élèves de la classe
+                grade_counts = {}
+
+                if selected_term == 0:
+                    grades_qs = Grade.objects.filter(student__class_room=selected_class, school_year=active_year)
+                else:
+                    grades_qs = Grade.objects.filter(student__class_room=selected_class, term=selected_term, school_year=active_year)
+
+                for gc in grades_qs.values('student_id').annotate(cnt=Count('id')):
+                    grade_counts[gc['student_id']] = gc['cnt']
+
+                # Précharger le nombre d'absences pour tous les élèves de la classe
+                absence_counts = {}
+                absences_qs = Attendance.objects.filter(student__class_room=selected_class, status='ABSENT', school_year=active_year)
+                for ac in absences_qs.values('student_id').annotate(cnt=Count('id')):
+                    absence_counts[ac['student_id']] = ac['cnt']
+
+                for s in students:
+                    grade_count = grade_counts.get(s.id, 0)
+
+                    if grade_count > 0:
+                        absences = absence_counts.get(s.id, 0)
+
+                        subjects = Subject.objects.filter(classes=selected_class).distinct()
+                        if not subjects.exists():
+                            subjects = Subject.objects.all()
+                        total_coef = sum(configs.get(sub.id, float(sub.coefficient or 1.0)) for sub in subjects)
+
+                        s_rank_info = class_ranks.get(s.id, {'rank_num': len(students)})
+                        avg = s_rank_info.get('average', 0.0) if 'average' in s_rank_info else 0.0
+
+                        ranking.append({
+                            'student': s,
+                            'name': s.user.get_full_name() or s.user.username,
+                            'avg': avg,
+                            'absences': absences,
+                            'grade_count': grade_count,
+                            'total_coef': round(total_coef, 1),
+                            'rank': s_rank_info['rank_num'],
+                            'badge': 'bg' if avg >= 14 else ('bp' if avg >= 10 else 'ba'),
+                        })
+                ranking.sort(key=lambda x: x['avg'], reverse=True)
 
 
 
         context.update({
             'classes': classes,
             'selected_class': selected_class,
-            'selected_class_id': int(selected_class_id) if selected_class_id else None,
+            'selected_class_id': selected_class.id if selected_class else None,
             'selected_term': selected_term,
             'term_range': term_range,
             'ranking': ranking,
@@ -1273,176 +1288,219 @@ def load_panel_view(request, panel_name):
 
     elif panel_name == 'bulletin':
         # Report card for student (dynamic)
-        student_id = request.GET.get('student_id')
-        term = request.GET.get('term', '2')
         try:
-            term = int(term)
-        except ValueError:
-            term = 2
-            
-        student_prof = None
-        if student_id:
-            student_prof = get_object_or_404(StudentProfile, id=student_id)
-            # ── Vérification accès : l'élève ne peut voir QUE son propre bulletin ──
-            if active_role == 'eleve':
-                try:
-                    own_profile = request.user.student_profile
-                    if own_profile.id != student_prof.id:
-                        return _htmx_forbidden('bulletin')
-                except Exception:
-                    return _htmx_forbidden('bulletin')
-            # ── Le parent ne peut voir QUE le bulletin de ses enfants ──
-            elif active_role == 'parent':
-                try:
-                    parent_prof = request.user.parent_profile
-                    enfants_ids = list(parent_prof.children.values_list('id', flat=True))
-                    if student_prof.id not in enfants_ids:
-                        return _htmx_forbidden('bulletin')
-                except Exception:
-                    return _htmx_forbidden('bulletin')
-        else:
+            student_id = request.GET.get('student_id')
+            term = request.GET.get('term', '1')
             try:
-                if active_role == 'parent':
-                    parent_prof = request.user.parent_profile
-                    student_prof = parent_prof.children.first()
-                elif active_role == 'eleve':
-                    student_prof = request.user.student_profile
-                else:
-                    # admin ou prof : premier élève par défaut
-                    student_prof = StudentProfile.objects.first()
-            except Exception:
-                pass
-                
-        if not student_prof and active_role in ('admin', 'prof'):
-            student_prof = StudentProfile.objects.first()
-            
-        if student_prof:
-            student_name = student_prof.user.get_full_name() or student_prof.user.username
-            class_name = student_prof.class_room.name if student_prof.class_room else 'Non assignée'
-            student_db_id = student_prof.id
-        else:
-            student_name = "Sarr Kofi"
-            class_name = "6ème A"
-            student_db_id = 1
-            
-        grades = []
-        rank_str = "—"
-        term_range = range(1, 4)
-        active_year = SchoolSettings.get().school_year
-        
-        if student_prof:
-            term_range = range(1, (student_prof.class_room.nb_trimestres or 3) + 1) if student_prof.class_room else range(1, 4)
-            configs = {cfg.subject_id: float(cfg.coefficient) for cfg in ClassSubjectConfig.objects.filter(school_class=student_prof.class_room)} if student_prof.class_room else {}
-            
-            # Calculate rank dynamically
-            if student_prof.class_room:
-                class_ranks = get_class_rankings(student_prof.class_room, term, active_year)
-                s_rank_info = class_ranks.get(student_prof.id)
-                if s_rank_info:
-                    rank_num = s_rank_info['rank_num']
-                    rank_str = f"{rank_num}er/{len(class_ranks)}" if rank_num == 1 else f"{rank_num}ème/{len(class_ranks)}"
+                term = int(term)
+            except (ValueError, TypeError):
+                term = 1
 
-
-            subjects = Subject.objects.filter(classes=student_prof.class_room).distinct() if student_prof.class_room else Subject.objects.all()
-            
-            if term == 0:
-                # Annual
-                nb_terms = student_prof.class_room.nb_trimestres or 3 if student_prof.class_room else 3
-                for sub in subjects:
-                    coef = configs.get(sub.id, float(sub.coefficient))
-                    term_scores = []
-                    for t in range(1, nb_terms + 1):
-                        det = get_student_subject_term_details(student_prof, sub, t, active_year)
-                        if det['moyenne'] is not None:
-                            term_scores.append(det['moyenne'])
-                    avg_score = sum(term_scores) / len(term_scores) if term_scores else None
-                    
-                    if avg_score is not None:
-                        # Class average for annual
-                        sibling_students = StudentProfile.objects.filter(class_room=student_prof.class_room) if student_prof.class_room else [student_prof]
-                        sibling_annual_scores = []
-                        for sib in sibling_students:
-                            sib_term_scores = []
-                            for t in range(1, nb_terms + 1):
-                                sib_det = get_student_subject_term_details(sib, sub, t, active_year)
-                                if sib_det['moyenne'] is not None:
-                                    sib_term_scores.append(sib_det['moyenne'])
-                            sib_avg = sum(sib_term_scores) / len(sib_term_scores) if sib_term_scores else None
-                            if sib_avg is not None:
-                                sibling_annual_scores.append(sib_avg)
-                        class_avg = sum(sibling_annual_scores) / len(sibling_annual_scores) if sibling_annual_scores else avg_score
-                        
-                        grades.append({
-                            'subject': sub.name,
-                            'coef': coef,
-                            'devoirs_str': "—",
-                            'moy_devoirs': None,
-                            'compo': None,
-                            'score': round(avg_score, 2),
-                            'class_avg': round(class_avg, 2),
-                            'rank': "—",
-                            'remark': "Moyenne annuelle"
-                        })
+            student_prof = None
+            # Normalize student_id: reject 'None', empty string, or non-numeric values
+            raw_student_id = request.GET.get('student_id', '').strip()
+            student_id = raw_student_id if raw_student_id.isdigit() else None
+            if student_id:
+                # When student_id is explicitly provided, look it up
+                # Use filter().first() instead of get_object_or_404 to avoid 404 crashing HTMX
+                student_prof = StudentProfile.objects.filter(id=student_id).first()
+                if not student_prof:
+                    # Student not found - show friendly error, don't crash
+                    return HttpResponse(
+                        '<div class="empty-state">'
+                        '<i class="ti ti-user-off" style="font-size:40px; color:var(--color-text-tertiary);"></i>'
+                        '<p style="color:var(--color-text-secondary); margin-top:8px;">Profil élève introuvable.</p>'
+                        '</div>',
+                        status=200
+                    )
+                # ── Vérification accès : l'élève ne peut voir QUE son propre bulletin ──
+                if active_role == 'eleve':
+                    try:
+                        own_profile = request.user.student_profile
+                        if own_profile.id != student_prof.id:
+                            return _htmx_forbidden('bulletin')
+                    except Exception:
+                        return _htmx_forbidden('bulletin')
+                # ── Le parent ne peut voir QUE le bulletin de ses enfants ──
+                elif active_role == 'parent':
+                    try:
+                        parent_prof = request.user.parent_profile
+                        enfants_ids = list(parent_prof.children.values_list('id', flat=True))
+                        if student_prof.id not in enfants_ids:
+                            return _htmx_forbidden('bulletin')
+                    except Exception:
+                        return _htmx_forbidden('bulletin')
             else:
-                # Term specific
-                for sub in subjects:
-                    details = get_student_subject_term_details(student_prof, sub, term, active_year)
-                    if details['moyenne'] is not None:
-                        coef = configs.get(sub.id, float(sub.coefficient))
-                        
-                        # Calculate class average
-                        sibling_students = StudentProfile.objects.filter(class_room=student_prof.class_room) if student_prof.class_room else [student_prof]
-                        sibling_scores = []
-                        for sib in sibling_students:
-                            sib_details = get_student_subject_term_details(sib, sub, term, active_year)
-                            if sib_details['moyenne'] is not None:
-                                sibling_scores.append(sib_details['moyenne'])
-                        class_avg = sum(sibling_scores) / len(sibling_scores) if sibling_scores else details['moyenne']
-                        
-                        # Calculate rank in subject
-                        sibling_scores.sort(reverse=True)
-                        try:
-                            rank_num = sibling_scores.index(details['moyenne']) + 1
-                            rank_str_sub = f"{rank_num}er" if rank_num == 1 else f"{rank_num}ème"
-                        except ValueError:
-                            rank_str_sub = "—"
-                            
-                        grades.append({
-                            'subject': sub.name,
-                            'coef': coef,
-                            'devoirs_str': details['devoirs_str'],
-                            'moy_devoirs': details['moy_devoirs'],
-                            'compo': details['compo'],
-                            'score': details['moyenne'],
-                            'class_avg': round(class_avg, 2),
-                            'rank': rank_str_sub,
-                            'remark': details['remark'] or "Bon travail",
-                        })
-                        
-        if term == 0:
-            avg = get_student_annual_average(student_prof, active_year) if student_prof else 0
-            has_compositions = True
-        else:
-            avg = get_student_term_average(student_prof, term, active_year) if student_prof else 0
-            has_compositions = Grade.objects.filter(
-                student__class_room=student_prof.class_room,
-                term=term,
-                school_year=active_year,
-                grade_type='COMPOSITION'
-            ).exists() if student_prof and student_prof.class_room else False
-                
-        context.update({
-            'student_id': student_db_id,
-            'student_name': student_name,
-            'class_name': class_name,
-            'rank': rank_str,
-            'average': round(avg, 2),
-            'grades': grades,
-            'term': term,
-            'term_range': term_range,
-            'has_compositions': has_compositions,
-        })
-        return render(request, 'partials/bulletin_detail.html', context)
+                # No student_id in URL — resolve from logged-in user's profile
+                try:
+                    if active_role == 'parent':
+                        parent_prof = request.user.parent_profile
+                        student_prof = parent_prof.children.first()
+                    elif active_role == 'eleve':
+                        student_prof = request.user.student_profile
+                    else:
+                        # admin ou prof : premier élève par défaut
+                        student_prof = StudentProfile.objects.first()
+                except Exception:
+                    pass
+
+            if not student_prof and active_role in ('admin', 'prof'):
+                student_prof = StudentProfile.objects.first()
+
+            # If still no student found for eleve/parent, show a friendly message
+            if not student_prof and active_role in ('eleve', 'parent'):
+                return HttpResponse(
+                    '<div class="empty-state">'
+                    '<i class="ti ti-user-off" style="font-size:40px; color:var(--color-text-tertiary);"></i>'
+                    '<p style="color:var(--color-text-secondary); margin-top:8px;">'
+                    'Votre profil n\'est pas encore configuré.<br>'
+                    'Contactez l\'administration pour associer votre compte à un élève.'
+                    '</p>'
+                    '</div>',
+                    status=200
+                )
+
+            if student_prof:
+                student_name = student_prof.user.get_full_name() or student_prof.user.username
+                class_name = student_prof.class_room.name if student_prof.class_room else 'Non assignée'
+                student_db_id = student_prof.id
+                # Compute initials safely in Python
+                parts = student_name.split()
+                student_initials = (parts[0][0] if parts else '') + (parts[1][0] if len(parts) > 1 else '')
+            else:
+                student_name = "—"
+                class_name = "—"
+                student_db_id = None
+                student_initials = "?"
+
+            grades = []
+            rank_str = "—"
+            term_range = range(1, 4)
+            active_year = SchoolSettings.get().school_year
+
+            if student_prof:
+                term_range = range(1, (student_prof.class_room.nb_trimestres or 3) + 1) if student_prof.class_room else range(1, 4)
+                configs = {cfg.subject_id: float(cfg.coefficient or 1.0) for cfg in ClassSubjectConfig.objects.filter(school_class=student_prof.class_room)} if student_prof.class_room else {}
+
+                # Calculate rank dynamically
+                if student_prof.class_room:
+                    class_ranks = get_class_rankings(student_prof.class_room, term, active_year)
+                    s_rank_info = class_ranks.get(student_prof.id)
+                    if s_rank_info:
+                        rank_num = s_rank_info['rank_num']
+                        rank_str = f"{rank_num}er/{len(class_ranks)}" if rank_num == 1 else f"{rank_num}ème/{len(class_ranks)}"
+
+                subjects = Subject.objects.filter(classes=student_prof.class_room).distinct() if student_prof.class_room else Subject.objects.all()
+
+                if term == 0:
+                    # Annual
+                    nb_terms = student_prof.class_room.nb_trimestres or 3 if student_prof.class_room else 3
+                    for sub in subjects:
+                        coef = configs.get(sub.id, float(sub.coefficient or 1.0))
+                        term_scores = []
+                        for t in range(1, nb_terms + 1):
+                            det = get_student_subject_term_details(student_prof, sub, t, active_year)
+                            if det['moyenne'] is not None:
+                                term_scores.append(det['moyenne'])
+                        avg_score = sum(term_scores) / len(term_scores) if term_scores else None
+
+                        if avg_score is not None:
+                            # Class average for annual
+                            sibling_students = StudentProfile.objects.filter(class_room=student_prof.class_room) if student_prof.class_room else [student_prof]
+                            sibling_annual_scores = []
+                            for sib in sibling_students:
+                                sib_term_scores = []
+                                for t in range(1, nb_terms + 1):
+                                    sib_det = get_student_subject_term_details(sib, sub, t, active_year)
+                                    if sib_det['moyenne'] is not None:
+                                        sib_term_scores.append(sib_det['moyenne'])
+                                sib_avg = sum(sib_term_scores) / len(sib_term_scores) if sib_term_scores else None
+                                if sib_avg is not None:
+                                    sibling_annual_scores.append(sib_avg)
+                            class_avg = sum(sibling_annual_scores) / len(sibling_annual_scores) if sibling_annual_scores else avg_score
+
+                            grades.append({
+                                'subject': sub.name,
+                                'coef': coef,
+                                'devoirs_str': "—",
+                                'moy_devoirs': None,
+                                'compo': None,
+                                'score': round(avg_score, 2),
+                                'class_avg': round(class_avg, 2),
+                                'rank': "—",
+                                'remark': "Moyenne annuelle"
+                            })
+                else:
+                    # Term specific
+                    for sub in subjects:
+                        details = get_student_subject_term_details(student_prof, sub, term, active_year)
+                        if details['moyenne'] is not None:
+                            coef = configs.get(sub.id, float(sub.coefficient or 1.0))
+
+                            # Calculate class average
+                            sibling_students = StudentProfile.objects.filter(class_room=student_prof.class_room) if student_prof.class_room else [student_prof]
+                            sibling_scores = []
+                            for sib in sibling_students:
+                                sib_details = get_student_subject_term_details(sib, sub, term, active_year)
+                                if sib_details['moyenne'] is not None:
+                                    sibling_scores.append(sib_details['moyenne'])
+                            class_avg = sum(sibling_scores) / len(sibling_scores) if sibling_scores else details['moyenne']
+
+                            # Calculate rank in subject
+                            sibling_scores.sort(reverse=True)
+                            try:
+                                rank_num = sibling_scores.index(details['moyenne']) + 1
+                                rank_str_sub = f"{rank_num}er" if rank_num == 1 else f"{rank_num}ème"
+                            except ValueError:
+                                rank_str_sub = "—"
+
+                            grades.append({
+                                'subject': sub.name,
+                                'coef': coef,
+                                'devoirs_str': details['devoirs_str'],
+                                'moy_devoirs': details['moy_devoirs'],
+                                'compo': details['compo'],
+                                'score': details['moyenne'],
+                                'class_avg': round(class_avg, 2),
+                                'rank': rank_str_sub,
+                                'remark': details['remark'] or "Bon travail",
+                            })
+
+            if term == 0:
+                avg = get_student_annual_average(student_prof, active_year) if student_prof else 0
+                has_compositions = True
+            else:
+                avg = get_student_term_average(student_prof, term, active_year) if student_prof else 0
+                has_compositions = Grade.objects.filter(
+                    student__class_room=student_prof.class_room,
+                    term=term,
+                    school_year=active_year,
+                    grade_type='COMPOSITION'
+                ).exists() if student_prof and student_prof.class_room else False
+
+            context.update({
+                'student_id': student_db_id,
+                'student_initials': student_initials,
+                'student_name': student_name,
+                'class_name': class_name,
+                'rank': rank_str,
+                'average': round(avg, 2),
+                'grades': grades,
+                'term': term,
+                'term_range': term_range,
+                'has_compositions': has_compositions,
+            })
+            return render(request, 'partials/bulletin_detail.html', context)
+        except Exception as e:
+            import traceback
+            print(f"[BULLETIN ERROR] {e}\n{traceback.format_exc()}")
+            return HttpResponse(
+                f'<div class="empty-state" style="color:#A32D2D;">'
+                f'<i class="ti ti-alert-circle" style="font-size:32px;"></i>'
+                f'<p style="margin-top:8px;">Erreur bulletin : {str(e)}</p>'
+                f'</div>',
+                status=200
+            )
 
     elif panel_name == 'progression':
         # Resolve student (eleve or parent)
