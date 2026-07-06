@@ -257,7 +257,11 @@
             <p>Directeur: {{ school_director }}</p>
         </div>
         <div class="bulletin-title">
+            {% if has_compositions or term == 0 %}
             <h2>BULLETIN DE NOTES</h2>
+            {% else %}
+            <h2>RELEVÉ DE NOTES DE DEVOIRS</h2>
+            {% endif %}
             <p>Année Scolaire: <strong>{{ school_year }}</strong></p>
             <p>Période: <strong>{% if term == 0 %}Annuel{% else %}Trimestre {{ term }}{% endif %}</strong></p>
         </div>
@@ -272,26 +276,46 @@
         </div>
         <div class="meta-item" style="text-align: right;">
             <div>Date d'édition: <strong>{{ today|date:"d/m/Y" }}</strong></div>
-            <div>Statut: <strong>Officiel</strong></div>
+            <div>Statut: <strong>{% if has_compositions or term == 0 %}Officiel{% else %}Provisoire (Devoirs){% endif %}</strong></div>
         </div>
     </div>
 
     <!-- Grades Table -->
     <table>
-        <colgroup>
-            <col class="col-matiere">
-            <col class="col-coef">
-            {% if term != 0 %}
-            <col class="col-devoirs">
-            <col class="col-moy-dev">
-            <col class="col-compo">
+        {% if term != 0 %}
+            {% if has_compositions %}
+            <colgroup>
+                <col style="width: 18%;">
+                <col style="width: 5%;">
+                <col style="width: 14%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 7%;">
+                <col style="width: 16%;">
+            </colgroup>
+            {% else %}
+            <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 8%;">
+                <col style="width: 25%;">
+                <col style="width: 12%;">
+                <col style="width: 30%;">
+            </colgroup>
             {% endif %}
-            <col class="col-moy">
-            <col class="col-total">
-            <col class="col-avg-cls">
-            <col class="col-rang">
-            <col class="col-apprec">
+        {% else %}
+        <colgroup>
+            <col style="width: 22%;">
+            <col style="width: 6%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 24%;">
         </colgroup>
+        {% endif %}
         <thead>
             <tr>
                 <th>Matière</th>
@@ -299,12 +323,19 @@
                 {% if term != 0 %}
                 <th style="text-align: center;">Notes</th>
                 <th style="text-align: center;">Moy. Dev.</th>
+                {% if has_compositions %}
                 <th style="text-align: center;">Compo</th>
                 {% endif %}
+                {% endif %}
+                
+                {% if has_compositions or term == 0 %}
                 <th style="text-align: center;">Moy./20</th>
                 <th style="text-align: center;">Total</th>
                 <th style="text-align: center;">Cl. Moy.</th>
                 <th style="text-align: center;">Rang</th>
+                {% else %}
+                <th style="text-align: center;">Moy. Devoirs /20</th>
+                {% endif %}
                 <th>Appréciations</th>
             </tr>
         </thead>
@@ -316,18 +347,26 @@
                 {% if term != 0 %}
                 <td style="text-align: center; color: #475569;">{{ g.devoirs_str|default:"—" }}</td>
                 <td style="text-align: center; color: #475569;">{% if g.moy_devoirs %}{{ g.moy_devoirs }}{% else %}—{% endif %}</td>
+                {% if has_compositions %}
                 <td style="text-align: center; color: #475569;">{% if g.compo %}{{ g.compo }}{% else %}—{% endif %}</td>
                 {% endif %}
+                {% endif %}
+                
+                {% if has_compositions or term == 0 %}
                 <td style="text-align: center; font-weight: 700;" class="score">{{ g.score }}</td>
                 <td style="text-align: center; font-weight: 600; color: #0f172a;">{{ g.total_points }}</td>
                 <td style="text-align: center; color: #64748b;">{{ g.class_avg }}</td>
                 <td style="text-align: center; font-weight: 600; color: #1D5FA5;">{{ g.rank }}</td>
+                {% else %}
+                <td style="text-align: center; font-weight: 700; color: #475569;">{% if g.moy_devoirs %}{{ g.moy_devoirs }}{% else %}—{% endif %}</td>
+                {% endif %}
                 <td class="apprec-cell">{{ g.remark|default:"Bon travail" }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
+    {% if has_compositions or term == 0 %}
     <!-- Summary Box -->
     <div class="summary-box">
         <div class="summary-item">
@@ -349,6 +388,11 @@
             </span>
         </div>
     </div>
+    {% else %}
+    <div class="summary-box" style="justify-content: center; text-align: center; border-color: #cbd5e1; background: #f8fafc; padding: 10px;">
+        <span style="font-weight: 600; color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Document provisoire — Les compositions n'étant pas encore effectuées, la moyenne générale et le rang ne sont pas définis.</span>
+    </div>
+    {% endif %}
 
     <!-- Signatures -->
     <div class="signatures">

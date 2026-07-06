@@ -23,8 +23,13 @@
         <thead>
             <tr>
                 <th>Élève</th>
-                <th>Note Maths</th>
-                <th>Rang Maths</th>
+                {% if has_compositions or selected_term == 0 %}
+                <th>Moyenne Générale</th>
+                <th>Rang</th>
+                {% else %}
+                <th>Moyenne Devoirs</th>
+                <th>Rang</th>
+                {% endif %}
                 <th>Appréciation saisie</th>
             </tr>
         </thead>
@@ -32,12 +37,17 @@
             {% for bul in bulletins %}
             <tr>
                 <td style="font-weight: 600; color: var(--color-text-primary);">{{ bul.name }}</td>
-                {% if bul.avg >= 15 %}
-                <td style="font-weight: 600; color: #1D9E75;">{{ bul.avg }}/20</td>
+                {% if has_compositions or selected_term == 0 %}
+                    {% if bul.avg >= 15 %}
+                    <td style="font-weight: 600; color: #1D9E75;">{{ bul.avg }}/20</td>
+                    {% else %}
+                    <td style="font-weight: 600; color: var(--color-primary);">{{ bul.avg }}/20</td>
+                    {% endif %}
+                    <td>{{ bul.rank }}</td>
                 {% else %}
-                <td style="font-weight: 600; color: var(--color-primary);">{{ bul.avg }}/20</td>
+                    <td style="font-weight: 600; color: var(--color-text-secondary);">{{ bul.avg }}/20</td>
+                    <td><span class="badge" style="background: var(--color-background-tertiary); color: var(--color-text-tertiary); font-size: 10px;">Non applicable</span></td>
                 {% endif %}
-                <td>{{ bul.rank }}</td>
                 <td><input type="text" value="{{ bul.remark }}" style="width: 100%; font-size: 11px; padding: 4px 8px;"></td>
             </tr>
             {% endfor %}

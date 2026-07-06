@@ -512,12 +512,21 @@ def load_panel_view(request, panel_name):
         bulletins_list = []
         term_range = range(1, 4)
         active_year = SchoolSettings.get().school_year
+        has_compositions = False
         
         if selected_class_id:
             selected_class = get_object_or_404(SchoolClass, id=selected_class_id)
             students = StudentProfile.objects.filter(class_room=selected_class).select_related('user', 'parent__user')
             term_range = range(1, (selected_class.nb_trimestres or 3) + 1)
             
+            if term != 0:
+                has_compositions = Grade.objects.filter(
+                    student__class_room=selected_class,
+                    term=term,
+                    school_year=active_year,
+                    grade_type='COMPOSITION'
+                ).exists()
+                
             class_ranks = get_class_rankings(selected_class, term, active_year)
             
             # Précharger les notifications des parents pour éviter le N+1
@@ -545,7 +554,7 @@ def load_panel_view(request, panel_name):
                     'name': s.user.get_full_name() or s.user.username,
                     'average': avg_score,
                     'rank': rank_str,
-                    'status': 'Généré',
+                    'status': 'Officiel' if has_compositions or term == 0 else 'Provisoire (Devoirs)',
                     'sent': sent_to_parent,
                 })
             bulletins_list.sort(key=lambda x: x['average'], reverse=True)
@@ -558,6 +567,7 @@ def load_panel_view(request, panel_name):
             'bulletins': bulletins_list,
             'selected_term': term,
             'term_range': term_range,
+            'has_compositions': has_compositions,
         })
         return render(request, 'partials/bulletins.html', context)
 
@@ -1052,6 +1062,7 @@ def load_panel_view(request, panel_name):
         active_year = SchoolSettings.get().school_year
         term_range = range(1, 4)
         term_val = 2
+        has_compositions = False
         
         if selected_class_id:
             class_obj = get_object_or_404(SchoolClass, id=selected_class_id)
@@ -1063,6 +1074,14 @@ def load_panel_view(request, panel_name):
                 term_val = 2
             if term_val not in term_range:
                 term_val = list(term_range)[-1]
+                
+            if term_val != 0:
+                has_compositions = Grade.objects.filter(
+                    student__class_room=class_obj,
+                    term=term_val,
+                    school_year=active_year,
+                    grade_type='COMPOSITION'
+                ).exists()
                 
             students = StudentProfile.objects.filter(class_room=class_obj)
             class_ranks = get_class_rankings(class_obj, term_val, active_year)
@@ -1085,6 +1104,7 @@ def load_panel_view(request, panel_name):
             'selected_class_id': int(selected_class_id) if selected_class_id else None,
             'selected_term': term_val,
             'term_range': term_range,
+            'has_compositions': has_compositions,
         })
         return render(request, 'partials/bulletin_prof.html', context)
 
@@ -1401,8 +1421,15 @@ def load_panel_view(request, panel_name):
                         
         if term == 0:
             avg = get_student_annual_average(student_prof, active_year) if student_prof else 0
+            has_compositions = True
         else:
             avg = get_student_term_average(student_prof, term, active_year) if student_prof else 0
+            has_compositions = Grade.objects.filter(
+                student__class_room=student_prof.class_room,
+                term=term,
+                school_year=active_year,
+                grade_type='COMPOSITION'
+            ).exists() if student_prof and student_prof.class_room else False
                 
         context.update({
             'student_id': student_db_id,
@@ -1413,6 +1440,7 @@ def load_panel_view(request, panel_name):
             'grades': grades,
             'term': term,
             'term_range': term_range,
+            'has_compositions': has_compositions,
         })
         return render(request, 'partials/bulletin_detail.html', context)
 
@@ -2215,11 +2243,19 @@ def print_bulletin_view(request, student_id):
             {'subject': 'Histoire-Géo', 'coef': 2.0, 'devoirs_str': '14', 'moy_devoirs': 14.0, 'compo': 15.0, 'score': 14.67, 'total_points': 29.34, 'class_avg': 12.9, 'rank': '2ème', 'remark': 'Très bon travail'},
         ]
         avg = 14.8
+        has_compositions = True
     else:
         if term == 0:
             avg = get_student_annual_average(student_prof, active_year)
+            has_compositions = True
         else:
             avg = get_student_term_average(student_prof, term, active_year)
+            has_compositions = Grade.objects.filter(
+                student__class_room=student_prof.class_room,
+                term=term,
+                school_year=active_year,
+                grade_type='COMPOSITION'
+            ).exists() if student_prof and student_prof.class_room else False
             
     # Calculate rank
     rank_str = "—"
@@ -2243,6 +2279,7 @@ def print_bulletin_view(request, student_id):
         'school_year': cfg.school_year,
         'school_director': cfg.school_director,
         'today': datetime.date.today(),
+        'has_compositions': has_compositions,
     }
 
     return render(request, 'print_bulletin.html', context)

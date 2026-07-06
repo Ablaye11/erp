@@ -31,8 +31,13 @@
             <tr>
                 <th>Élève</th>
                 <th>Classe</th>
+                {% if has_compositions or selected_term == 0 %}
                 <th>Moyenne</th>
                 <th>Rang</th>
+                {% else %}
+                <th>Moyenne Devoirs</th>
+                <th>Rang</th>
+                {% endif %}
                 <th>Bulletin</th>
                 <th>Envoyé</th>
             </tr>
@@ -44,12 +49,21 @@
                     <i class="ti ti-user" style="color: var(--color-primary);"></i> {{ bul.name }}
                 </td>
                 <td>{{ selected_class.name }}</td>
+                {% if has_compositions or selected_term == 0 %}
                 <td>
                     <span data-style-color="{% if bul.average >= 15 %}#1D9E75{% elif bul.average >= 12 %}var(--color-primary){% else %}#854F0B{% endif %}" style="font-weight: 600;">
                         {{ bul.average }}/20
                     </span>
                 </td>
                 <td><span class="badge bb">{{ bul.rank }}</span></td>
+                {% else %}
+                <td>
+                    <span style="font-weight: 600; color: var(--color-text-secondary);">
+                        {{ bul.average }}/20
+                    </span>
+                </td>
+                <td><span class="badge" style="background: var(--color-background-tertiary); color: var(--color-text-tertiary); font-size: 10px;">Non applicable</span></td>
+                {% endif %}
                 <td><span class="badge bg">{{ bul.status }}</span></td>
                 <td>
                     <span class="badge {% if bul.sent == 'Oui' %}bt{% else %}ba{% endif %}">{{ bul.sent }}</span>
