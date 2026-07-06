@@ -1243,6 +1243,11 @@ input:focus, select:focus, textarea:focus {
         width: 100% !important;
         min-width: 650px !important;
     }
+    .table-wrap table th, 
+    .table-wrap table td {
+        padding: 8px 10px !important;
+        font-size: 11.5px !important;
+    }
     
     /* Make promotion grid horizontally scrollable */
     #promotion-form {
@@ -1282,6 +1287,30 @@ input:focus, select:focus, textarea:focus {
     }
     .user-name-wrap {
         display: none !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Form filters selects full-width stacking */
+    div[style*="display: flex"][style*="flex-wrap: wrap"] select,
+    form[style*="display: flex"][style*="flex-wrap: wrap"] select {
+        width: 100% !important;
+        margin-bottom: 6px !important;
+    }
+    
+    /* Bulletin detail and parent dash header cards stacking vertically */
+    div[style*="display: flex"][style*="padding: 16px 20px"],
+    div[style*="display: flex"][style*="padding: 14px 18px"] {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 10px !important;
+    }
+    div[style*="display: flex"][style*="padding: 16px 20px"] div[style*="text-align: right"],
+    div[style*="display: flex"][style*="padding: 14px 18px"] div[style*="margin-left: auto"] {
+        text-align: center !important;
+        margin-left: 0 !important;
+        margin-top: 5px !important;
     }
 }
 
