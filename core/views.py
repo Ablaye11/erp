@@ -2309,7 +2309,7 @@ def send_bulletin_parent_view(request, student_id):
             from core.utils import send_system_email
             send_system_email(
                 subject=f"Bulletin disponible - {student_prof.user.get_full_name()}",
-                message=f"Bonjour,\n\nLe bulletin scolaire du {term_name} de votre enfant {student_prof.user.get_full_name()} est disponible dans votre espace parent sur l'ERP École Al-Nour.\n\nCordialement,\nL'administration.",
+                message=f"Bonjour,\n\nLe bulletin scolaire du {term_name} de votre enfant {student_prof.user.get_full_name()} est disponible dans votre espace parent sur l'ERP {SchoolSettings.get().school_name}.\n\nCordialement,\nL'administration.",
                 recipient_list=[parent.user.email]
             )
         return HttpResponse(
@@ -2550,7 +2550,7 @@ def send_unpaid_reminders_view(request):
             if parent.user.email:
                 from core.utils import send_system_email
                 send_system_email(
-                    subject="Rappel de paiement - École Al-Nour",
+                    subject=f"Rappel de paiement - {SchoolSettings.get().school_name}",
                     message=f"Bonjour,\n\nNous vous rappelons que les frais de scolarité de votre enfant {pay.student.user.get_full_name()} pour la période {term_name} sont toujours en attente (Montant dû : {int(pay.tuition_fee.amount - pay.amount_paid)} FCFA).\n\nMerci de régulariser la situation.\n\nCordialement,\nLe service comptable.",
                     recipient_list=[parent.user.email]
                 )

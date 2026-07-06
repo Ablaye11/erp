@@ -37,14 +37,21 @@ def send_system_email(subject, message, recipient_list):
     """Wrapper pour envoyer des emails avec fallback logging."""
     from django.core.mail import send_mail
     from django.conf import settings
+    from core.models import SchoolSettings
     import logging
     logger = logging.getLogger(__name__)
+    
+    try:
+        cfg = SchoolSettings.get()
+        from_email = f"{cfg.school_name} <{cfg.school_email}>"
+    except Exception:
+        from_email = settings.DEFAULT_FROM_EMAIL
     
     try:
         send_mail(
             subject=subject,
             message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=from_email,
             recipient_list=recipient_list,
             fail_silently=False,
         )
