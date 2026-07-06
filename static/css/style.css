@@ -962,10 +962,15 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus,
 
 [data-theme="dark"] .sidebar,
 [data-theme="dark"] .topbar,
-[data-theme="dark"] .card,
 [data-theme="dark"] .data-table th,
 [data-theme="dark"] .modal-backdrop {
     background: var(--color-background-secondary) !important;
+    border-color: var(--color-border-tertiary) !important;
+    color: var(--color-text-primary) !important;
+}
+
+[data-theme="dark"] .card {
+    background: var(--color-background-secondary);
     border-color: var(--color-border-tertiary) !important;
     color: var(--color-text-primary) !important;
 }
