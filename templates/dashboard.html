@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tableau de bord - École Al-Nour{% endblock %}
+{% block title %}Tableau de bord - {{ school_name }}{% endblock %}
 
 {% block content %}
 <!-- HTMX Progress Bar -->
@@ -16,7 +16,7 @@
                 <i class="ti ti-school" aria-hidden="true" style="color: #fff; font-size: 18px;"></i>
             </div>
             <div>
-                <div class="school-name">École Al-Nour</div>
+                <div class="school-name">{{ school_name }}</div>
                 <div class="school-sub">ERP v2.0</div>
             </div>
         </div>

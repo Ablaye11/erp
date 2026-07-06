@@ -124,7 +124,7 @@
                             // Notification sonore subtile si le document est actif
                             if (!document.hidden) {
                                 document.title = '💬 Nouveau message - Messagerie';
-                                setTimeout(() => { document.title = 'Tableau de bord - École Al-Nour'; }, 3000);
+                                setTimeout(() => { document.title = 'Tableau de bord - {{ school_name|escapejs }}'; }, 3000);
                             }
                         }
                     }
